@@ -1493,6 +1493,7 @@ function renderResults(d) {
 const SA_PARAMS = [
   { label: 'Screening assay cost ($)',        id: 'cost_screen',      low: 200,  high: 450,  fmt: v => '$'+v },
   { label: 'GC / confirmatory cost ($)',      id: 'cost_gc',          low: 25,   high: 200,  fmt: v => '$'+v },
+  { label: 'GC uptake (%)',                   id: 'gc_uptake',         low: 50,   high: 95,   fmt: v => v+'%' },
   { label: 'LS prior identification (%)',     id: 'lnch_prior_id',    low: 7,    high: 19,   fmt: v => v+'%' },
   { label: 'HBOC prior identification (%)',   id: 'hboc_prior_id',    low: 9,    high: 25,   fmt: v => v+'%' },
   { label: 'FH prior identification (%)',     id: 'fh_prior_id',      low: 1,    high: 9,    fmt: v => v+'%' },
