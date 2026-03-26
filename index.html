@@ -141,11 +141,20 @@
       <div>
         <div class="flex items-center gap-2 mb-2">
           <span class="gene-badge bg-purple-100 text-purple-800">HBOC</span>
-          <span class="text-xs text-slate-400">BRCA1 · BRCA2</span>
+          <span class="text-xs text-slate-400" id="hboc_genes_label">BRCA1 · BRCA2 · PALB2</span>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div><div class="label-sm">BRCA1 (%)</div><input type="number" id="r_brca1" class="input-field" value="0.29" min="0" step="0.01" /></div>
           <div><div class="label-sm">BRCA2 (%)</div><input type="number" id="r_brca2" class="input-field" value="0.43" min="0" step="0.01" /></div>
+          <div id="palb2_rate_row"><div class="label-sm tooltip-wrap">PALB2 (%)
+            <span class="tip">PALB2 pathogenic variant positive rate. Population prevalence ~0.21% (Guo et al. 2024, JAMA Netw Open). Associated with ~53% lifetime breast cancer risk. RRSO not routinely indicated.</span>
+          </div><input type="number" id="r_palb2" class="input-field" value="0.21" min="0" step="0.01" /></div>
+          <div class="flex items-end pb-1">
+            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+              <input type="checkbox" id="include_palb2" checked class="w-3.5 h-3.5 accent-purple-600" />
+              <span class="text-xs font-semibold text-purple-700">Include PALB2</span>
+            </label>
+          </div>
         </div>
       </div>
     </div>
@@ -161,17 +170,17 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <div class="label-sm tooltip-wrap">Screen cost / patient
-              <span class="tip">All-in cost per patient for the genomic panel, lab processing, and report delivery. Does not include GC.</span>
+              <span class="tip">All-in cost per patient for the genomic panel, lab processing, and report delivery. Does not include GC. Default $300 per Guo et al. 2024 (JAMA Netw Open); increase for broader multi-condition panels.</span>
             </div>
             <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
-            <input type="number" id="cost_screen" class="input-field pl-5" value="250" min="0" /></div>
+            <input type="number" id="cost_screen" class="input-field pl-5" value="300" min="0" /></div>
           </div>
           <div>
             <div class="label-sm tooltip-wrap">GC cost / positive
-              <span class="tip">Genetic counseling session cost per individual who tests positive.</span>
+              <span class="tip">Genetic counseling session cost per identified positive. Default $50 per Guo et al. 2024 (Schwartz et al. 2014 source); increase to $100–300 for more intensive post-test counseling programs.</span>
             </div>
             <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
-            <input type="number" id="cost_gc" class="input-field pl-5" value="250" min="0" /></div>
+            <input type="number" id="cost_gc" class="input-field pl-5" value="50" min="0" /></div>
           </div>
         </div>
 
@@ -212,12 +221,16 @@
           <div><div class="label-sm">CAD event ($)</div>
             <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
             <input type="number" id="cost_cad" class="input-field pl-5" value="95000" /></div></div>
-          <div><div class="label-sm">Breast cancer ($)</div>
+          <div><div class="label-sm tooltip-wrap">Breast cancer ($)
+            <span class="tip">Breast cancer diagnosis and initial treatment cost. Default $100,000 per Guo et al. 2024 (BRCA1/2 germline: $94,388; PALB2/sporadic: $101,619).</span>
+          </div>
             <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
-            <input type="number" id="cost_breast" class="input-field pl-5" value="140000" /></div></div>
-          <div class="col-span-2"><div class="label-sm">Ovarian cancer ($)</div>
+            <input type="number" id="cost_breast" class="input-field pl-5" value="100000" /></div></div>
+          <div class="col-span-2"><div class="label-sm tooltip-wrap">Ovarian cancer ($)
+            <span class="tip">Ovarian cancer diagnosis and initial treatment cost. Default $150,240 per Guo et al. 2024.</span>
+          </div>
             <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
-            <input type="number" id="cost_ovarian" class="input-field pl-5" value="110000" /></div></div>
+            <input type="number" id="cost_ovarian" class="input-field pl-5" value="150240" /></div></div>
         </div>
 
         <div>
@@ -381,6 +394,12 @@
                 </div>
                 <div class="relative"><input type="number" id="brca2_ovarian" class="input-field" value="17" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
               </div>
+              <div id="palb2_risk_row">
+                <div class="label-sm tooltip-wrap">PALB2 breast risk
+                  <span class="tip">Lifetime breast cancer risk for PALB2 carriers: ~53% (Antoniou et al. 2014, NEJM; Guo et al. 2024). PALB2 does not confer clinically significant ovarian cancer risk; RRSO is not routinely recommended for PALB2 carriers.</span>
+                </div>
+                <div class="relative"><input type="number" id="palb2_breast" class="input-field" value="53" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
               <div>
                 <div class="label-sm tooltip-wrap">% prophylactic surgery
                   <span class="tip">Proportion of female carriers opting for prophylactic mastectomy and/or salpingo-oophorectomy. Mastectomy reduces breast risk ~95%, RRSO reduces ovarian risk ~80%.</span>
@@ -533,6 +552,7 @@
       <p>ICER thresholds: &lt;$50K/QALY = highly cost-effective &nbsp;|&nbsp; $50–100K = cost-effective &nbsp;|&nbsp; $100–150K = borderline &nbsp;|&nbsp; &gt;$150K = above standard threshold.</p>
       <p>Clinical parameters derived from: Bonadona 2011 (Lynch); Nordestgaard 2016 (FH); Kuchenbaecker 2017 (BRCA). All values are editable above.</p>
       <p>Default values calibrated to: <strong>Guzauskas GF et al.</strong> Population Genomic Screening for Three Common Hereditary Conditions: A Cost-Effectiveness Analysis. <em>Ann Intern Med.</em> 2023;176:585–595. doi:10.7326/M22-0846</p>
+      <p>HBOC costs &amp; PALB2 parameters: <strong>Guo F et al.</strong> Cost-Effectiveness of Population-Based Multigene Testing for Breast and Ovarian Cancer Prevention. <em>JAMA Netw Open.</em> 2024;7(2):e2356078. doi:10.1001/jamanetworkopen.2023.56078</p>
     </div>
   </div>
 
@@ -627,6 +647,16 @@ function updateAgeSum() {
   el.className = `text-xs font-semibold px-2 py-1.5 rounded-md w-full text-center ${Math.abs(sum-100)<0.5 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`;
 }
 AGE_IDS.forEach(id => document.getElementById(id).addEventListener('input', updateAgeSum));
+
+// ─── PALB2 TOGGLE ─────────────────────────────────────────────────
+function updatePalb2Visibility() {
+  const included = document.getElementById('include_palb2').checked;
+  document.getElementById('palb2_rate_row').style.display  = included ? '' : 'none';
+  document.getElementById('palb2_risk_row').style.display  = included ? '' : 'none';
+  document.getElementById('hboc_genes_label').textContent  = included ? 'BRCA1 · BRCA2 · PALB2' : 'BRCA1 · BRCA2';
+}
+document.getElementById('include_palb2').addEventListener('change', updatePalb2Visibility);
+updatePalb2Visibility();
 
 // ─── HELPERS ──────────────────────────────────────────────────────
 const $ = id => parseFloat(document.getElementById(id).value) || 0;
@@ -752,6 +782,7 @@ function calculateCore() {
   const costGC     = $('cost_gc');
 
   // ── GENE POSITIVES ──────────────────────────────────────────────
+  const includePalb2 = document.getElementById('include_palb2').checked;
   const genes = {
     mlh1:  { n: N * pct('r_mlh1'),  cond:'lynch', pen:'high'   },
     msh2:  { n: N * pct('r_msh2'),  cond:'lynch', pen:'high'   },
@@ -762,11 +793,13 @@ function calculateCore() {
     apob:  { n: N * pct('r_apob'),  cond:'fh',    pen:'other'  },
     brca1: { n: N * pct('r_brca1'), cond:'hboc',  pen:'brca1'  },
     brca2: { n: N * pct('r_brca2'), cond:'hboc',  pen:'brca2'  },
+    ...(includePalb2 ? { palb2: { n: N * pct('r_palb2'), cond:'hboc', pen:'palb2' } } : {}),
   };
 
   const lynchN = genes.mlh1.n + genes.msh2.n + genes.msh6.n + genes.pms2.n;
   const fhN    = genes.ldlr.n + genes.pcsk9.n + genes.apob.n;
-  const hbocN  = genes.brca1.n + genes.brca2.n;
+  const palb2N = includePalb2 ? genes.palb2.n : 0;
+  const hbocN  = genes.brca1.n + genes.brca2.n + palb2N;
   const totalPositives = lynchN + fhN + hbocN;
 
   // ── LYNCH ────────────────────────────────────────────────────────
@@ -870,7 +903,13 @@ function calculateCore() {
   // Female carriers
   const brca1F = brca1N * femalePct;
   const brca2F = brca2N * femalePct;
-  const hbocBreastPrev  = (brca1F * (brca1BreastRisk  / HBOC_BREAST_ACCRUAL_YRS)  + brca2F * (brca2BreastRisk  / HBOC_BREAST_ACCRUAL_YRS))  * effRiskRed * ePvF * (1 - hbocPriorId);
+  const palb2F = palb2N * femalePct;
+  const palb2BreastRisk = includePalb2 ? pct('palb2_breast') : 0;
+  // PALB2 breast-only: no significant ovarian risk, RRSO not routinely indicated (Guo 2024)
+  const hbocBreastPrev  = (brca1F * (brca1BreastRisk  / HBOC_BREAST_ACCRUAL_YRS)
+                         + brca2F * (brca2BreastRisk   / HBOC_BREAST_ACCRUAL_YRS)
+                         + palb2F * (palb2BreastRisk   / HBOC_BREAST_ACCRUAL_YRS))
+                         * effRiskRed * ePvF * (1 - hbocPriorId);
   const hbocOvarianPrev = (brca1F * (brca1OvarianRisk / HBOC_OVARIAN_ACCRUAL_YRS) + brca2F * (brca2OvarianRisk / HBOC_OVARIAN_ACCRUAL_YRS)) * effRiskRed * ePvF * (1 - hbocPriorId);
 
   const qalyPerBreast  = weightedQaly('breast');
@@ -896,7 +935,7 @@ function calculateCore() {
 
   // ── RETURN ──────────────────────────────────────────────────────
   return {
-    genes, lynchN, fhN, hbocN, totalPositives,
+    genes, lynchN, fhN, hbocN, palb2N, totalPositives,
     lynchCrcPrev, lynchEndoPrev, lynchTotalEvents, lynchQalys,
     lynchNetCost: lynchMgmtCost + lynchScreenCost, lynchAvertedCost, lynchICER,
     fhMacePrev, fhQalys, fhNetCost: fhMgmtCost + fhScreenCost, fhAvertedCost, fhICER,
@@ -1057,8 +1096,11 @@ function renderResults(d) {
     { label:'APOB',  n:d.genes.apob.n,  color:'bg-amber-100 text-amber-800' },
     { label:'BRCA1', n:d.genes.brca1.n, color:'bg-purple-100 text-purple-800' },
     { label:'BRCA2', n:d.genes.brca2.n, color:'bg-purple-100 text-purple-800' },
+    ...(d.genes.palb2 ? [{ label:'PALB2', n:d.genes.palb2.n, color:'bg-purple-100 text-purple-800' }] : []),
   ];
-  document.getElementById('gene_breakdown').innerHTML = geneData.map(g => `
+  const gbEl = document.getElementById('gene_breakdown');
+  gbEl.className = `grid grid-cols-2 sm:grid-cols-3 ${geneData.length > 9 ? 'lg:grid-cols-10' : 'lg:grid-cols-9'} gap-3`;
+  gbEl.innerHTML = geneData.map(g => `
     <div class="rounded-lg p-3 ${g.color} text-center">
       <div class="font-bold text-sm">${g.label}</div>
       <div class="text-lg font-black">${fmtD(g.n)}</div>
@@ -1071,8 +1113,8 @@ function renderResults(d) {
 // ─── SENSITIVITY ANALYSIS ─────────────────────────────────────────
 // Parameter definitions with plausible ranges from Guzauskas 2023 Table 1
 const SA_PARAMS = [
-  { label: 'Screening assay cost ($)',        id: 'cost_screen',      low: 188,  high: 313,  fmt: v => '$'+v },
-  { label: 'GC / confirmatory cost ($)',      id: 'cost_gc',          low: 188,  high: 313,  fmt: v => '$'+v },
+  { label: 'Screening assay cost ($)',        id: 'cost_screen',      low: 200,  high: 450,  fmt: v => '$'+v },
+  { label: 'GC / confirmatory cost ($)',      id: 'cost_gc',          low: 25,   high: 200,  fmt: v => '$'+v },
   { label: 'LS prior identification (%)',     id: 'lnch_prior_id',    low: 7,    high: 19,   fmt: v => v+'%' },
   { label: 'HBOC prior identification (%)',   id: 'hboc_prior_id',    low: 9,    high: 25,   fmt: v => v+'%' },
   { label: 'FH prior identification (%)',     id: 'fh_prior_id',      low: 1,    high: 9,    fmt: v => v+'%' },
