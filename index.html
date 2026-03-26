@@ -210,11 +210,70 @@ Does not affect management uptake (set separately per condition).</span>
             <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
             <input type="number" id="cost_fh_mgmt" class="input-field pl-5" value="312" min="0" /></div>
           </div>
-          <div>
-            <div class="label-sm">HBOC ($/yr)</div>
-            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
-            <input type="number" id="cost_hboc_mgmt" class="input-field pl-5" value="4200" min="0" /></div>
-          </div>
+        </div>
+
+        <!-- HBOC Management — granular cost inputs -->
+        <div class="mt-2 rounded-lg border border-purple-100 bg-purple-50 p-2.5">
+          <p class="label-sm text-purple-700 mb-1.5">HBOC Management Costs</p>
+          <table class="w-full text-xs border-collapse">
+            <thead>
+              <tr class="bg-purple-100 text-purple-800">
+                <th class="py-1 px-2 border border-purple-200 text-left font-semibold">Intervention</th>
+                <th class="py-1 px-2 border border-purple-200 font-semibold">Cost</th>
+                <th class="py-1 px-2 border border-purple-200 font-semibold">Uptake</th>
+                <th class="py-1 px-2 border border-purple-200 text-left font-semibold text-purple-600">Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="bg-white">
+                <td class="py-1.5 px-2 border border-purple-200 font-medium text-slate-700">Breast MRI</td>
+                <td class="py-1 px-1.5 border border-purple-200">
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mri" class="input-field pl-5 text-right" value="1200" min="0" /></div>
+                </td>
+                <td class="py-1 px-1.5 border border-purple-200">
+                  <div class="relative"><input type="number" id="hboc_mri_uptake" class="input-field text-center" value="65" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
+                </td>
+                <td class="py-1.5 px-2 border border-purple-200 text-purple-600 text-xs">Annual</td>
+              </tr>
+              <tr class="bg-purple-50">
+                <td class="py-1.5 px-2 border border-purple-200 font-medium text-slate-700">Mammogram</td>
+                <td class="py-1 px-1.5 border border-purple-200">
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mammo" class="input-field pl-5 text-right" value="250" min="0" /></div>
+                </td>
+                <td class="py-1 px-1.5 border border-purple-200">
+                  <div class="relative"><input type="number" id="hboc_mammo_uptake" class="input-field text-center" value="80" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
+                </td>
+                <td class="py-1.5 px-2 border border-purple-200 text-purple-600 text-xs">Annual</td>
+              </tr>
+              <tr class="bg-white">
+                <td class="py-1.5 px-2 border border-purple-200 font-medium text-slate-700 tooltip-wrap">Risk-reducing mastectomy
+                  <span class="tip" style="width:220px">One-time cost, not annuitized. Reflects surgical and hospital costs for bilateral prophylactic mastectomy. Default $20,000 per Guo 2024.</span>
+                </td>
+                <td class="py-1 px-1.5 border border-purple-200">
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mast" class="input-field pl-5 text-right" value="20000" min="0" /></div>
+                </td>
+                <td class="py-1 px-1.5 border border-purple-200">
+                  <div class="relative"><input type="number" id="hboc_mast_uptake" class="input-field text-center" value="40" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
+                </td>
+                <td class="py-1.5 px-2 border border-purple-200 text-amber-600 text-xs">One-time</td>
+              </tr>
+              <tr class="bg-purple-50">
+                <td class="py-1.5 px-2 border border-purple-200 font-medium text-slate-700 tooltip-wrap">Salpingo-oophorectomy
+                  <span class="tip" style="width:220px">One-time cost, not annuitized. Risk-reducing bilateral salpingo-oophorectomy. Default $12,000 per Guo 2024.</span>
+                </td>
+                <td class="py-1 px-1.5 border border-purple-200">
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_rrso" class="input-field pl-5 text-right" value="12000" min="0" /></div>
+                </td>
+                <td class="py-1 px-1.5 border border-purple-200">
+                  <div class="relative"><input type="number" id="hboc_rrso_uptake" class="input-field text-center" value="50" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
+                </td>
+                <td class="py-1.5 px-2 border border-purple-200 text-amber-600 text-xs">One-time</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-2">
           <div>
             <div class="label-sm tooltip-wrap">Time horizon (yrs)
               <span class="tip" style="width:260px;white-space:pre-line">Controls how long management/surveillance costs accumulate (pvF annuity). Does NOT affect events prevented, which use age-stratified remaining-risk years instead.
@@ -1137,7 +1196,12 @@ function calculateCore() {
                   + hbocMaleN * 0.05 * (brca1BreastRisk / HBOC_BREAST_ACCRUAL_YRS) * ePvF * (1 - hbocPriorId) * qalyPerBreast; // male BRCA modest benefit
 
   const hbocScreenCost  = effHbocN * gcUptake * costGC;
-  const hbocMgmtCost    = effHbocN * hbocUptake * $('cost_hboc_mgmt') * pvF;
+  // Surveillance costs recur annually (pvF annuity); surgical costs are one-time (no pvF)
+  const hbocMriCost     = effHbocN * pct('hboc_mri_uptake')   * $('cost_hboc_mri')   * pvF;
+  const hbocMammoCost   = effHbocN * pct('hboc_mammo_uptake')  * $('cost_hboc_mammo') * pvF;
+  const hbocMastCost    = effHbocN * pct('hboc_mast_uptake')   * $('cost_hboc_mast');
+  const hbocRrsoCost    = effHbocN * pct('hboc_rrso_uptake')   * $('cost_hboc_rrso');
+  const hbocMgmtCost    = hbocMriCost + hbocMammoCost + hbocMastCost + hbocRrsoCost;
   const hbocAvertedBreast  = hbocBreastPrev  * $('cost_breast');
   const hbocAvertedOvarian = hbocOvarianPrev * $('cost_ovarian');
   const hbocAvertedCost    = hbocAvertedBreast + hbocAvertedOvarian;
