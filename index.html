@@ -1115,7 +1115,7 @@ function calculateCore() {
 
   // Lynch costs
   const lynchScreenCost = effLynchN * gcUptake * costGC;
-  const lynchMgmtCost   = effLynchN * $('cost_lynch_mgmt') * pvF;
+  const lynchMgmtCost   = effLynchN * lnchCompliance * $('cost_lynch_mgmt') * pvF;
   const lynchAvertedCrc  = lynchCrcPrev * $('cost_crc');
   const lynchAvertedEndo = lynchEndoPrev * $('cost_endo');
   const lynchAvertedCost = lynchAvertedCrc + lynchAvertedEndo;
