@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Population Genomic Screening — Cost-Effectiveness Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    input[type=number] { -moz-appearance: textfield; }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .input-field {
+      width: 100%; padding: 6px 10px; border: 1px solid #d1d5db;
+      border-radius: 6px; font-size: 13px; background: #fff;
+      transition: border-color 0.15s;
+    }
+    .input-field:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 2px rgba(79,70,229,0.15); }
+    .section-card {
+      background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
+      padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .section-title { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 14px;
+      padding-bottom: 8px; border-bottom: 2px solid #e0e7ff; display: flex; align-items: center; gap: 8px; }
+    .gene-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px;
+      border-radius: 4px; letter-spacing: 0.04em; }
+    .label-sm { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+    .result-kpi { background: #fff; border-radius: 12px; padding: 20px 24px; border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
+    .tooltip-wrap { position: relative; display: inline-block; cursor: help; }
+    .tooltip-wrap .tip {
+      visibility: hidden; opacity: 0; width: 220px; background: #1e293b; color: #fff;
+      font-size: 11px; line-height: 1.5; border-radius: 6px; padding: 8px 10px;
+      position: absolute; z-index: 100; bottom: calc(100% + 6px); left: 50%;
+      transform: translateX(-50%); transition: opacity 0.15s; pointer-events: none;
+    }
+    .tooltip-wrap:hover .tip { visibility: visible; opacity: 1; }
+    details > summary { cursor: pointer; user-select: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    .icer-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+      border-radius: 99px; font-weight: 700; font-size: 13px; }
+    .bar-container { position: relative; height: 280px; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- ─── HEADER ─────────────────────────────────────────────────── -->
+<header style="background: linear-gradient(135deg,#1e1b4b 0%,#312e81 60%,#1d4ed8 100%);"
+        class="text-white px-8 py-5 shadow-xl">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight">Population Genomic Screening</h1>
+      <p class="text-indigo-200 text-xs mt-0.5">Cost-Effectiveness Calculator &nbsp;·&nbsp; Lynch Syndrome &nbsp;·&nbsp; FH &nbsp;·&nbsp; HBOC</p>
+    </div>
+    <div class="text-right text-indigo-200 text-xs leading-relaxed hidden sm:block">
+      Outputs: QALY gained · Events prevented · ICER<br>
+      <span class="text-indigo-300">All clinical defaults are editable</span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-6">
+
+  <!-- ─── ROW 1: SCREENING PARAMETERS + DEMOGRAPHICS ──────────── -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+    <!-- Panel A: Program Parameters -->
+    <div class="section-card">
+      <div class="section-title">
+        <svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Program Parameters
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <div class="label-sm tooltip-wrap">Total Patients Screened
+            <span class="tip">Total number of individuals who received genomic panel testing in this cohort or time period.</span>
+          </div>
+          <input type="number" id="n_screened" class="input-field" value="100000" min="1" />
+        </div>
+
+        <div>
+          <div class="label-sm">Female (% of cohort)</div>
+          <input type="number" id="pct_female" class="input-field" value="52" min="0" max="100" step="0.1" />
+        </div>
+
+        <hr class="my-2 border-slate-100" />
+        <p class="label-sm text-slate-500">Age Distribution (must sum to 100%)</p>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div><div class="label-sm">18–30 (%)</div><input type="number" id="age_18" class="input-field" value="12" min="0" max="100" /></div>
+          <div><div class="label-sm">31–45 (%)</div><input type="number" id="age_31" class="input-field" value="28" min="0" max="100" /></div>
+          <div><div class="label-sm">46–60 (%)</div><input type="number" id="age_46" class="input-field" value="35" min="0" max="100" /></div>
+          <div><div class="label-sm">61–75 (%)</div><input type="number" id="age_61" class="input-field" value="20" min="0" max="100" /></div>
+          <div><div class="label-sm">76+ (%)</div><input type="number" id="age_76" class="input-field" value="5" min="0" max="100" /></div>
+          <div class="flex items-end">
+            <div id="age_sum_display" class="text-xs font-semibold px-2 py-1.5 rounded-md bg-green-50 text-green-700 w-full text-center">Sum: 100%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel B: Positive Rates -->
+    <div class="section-card">
+      <div class="section-title">
+        <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.78 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+        Observed Positive Rates
+      </div>
+      <p class="text-xs text-slate-400 mb-3">Enter your program's actual yield per gene (pathogenic/likely-pathogenic variants per 100 patients screened).</p>
+
+      <!-- Lynch -->
+      <div class="mb-3">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="gene-badge bg-emerald-100 text-emerald-800">LYNCH</span>
+          <span class="text-xs text-slate-400">MLH1 · MSH2 · MSH6 · PMS2</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><div class="label-sm">MLH1 (%)</div><input type="number" id="r_mlh1" class="input-field" value="0.12" min="0" step="0.01" /></div>
+          <div><div class="label-sm">MSH2 (%)</div><input type="number" id="r_msh2" class="input-field" value="0.11" min="0" step="0.01" /></div>
+          <div><div class="label-sm">MSH6 (%)</div><input type="number" id="r_msh6" class="input-field" value="0.09" min="0" step="0.01" /></div>
+          <div><div class="label-sm">PMS2 (%)</div><input type="number" id="r_pms2" class="input-field" value="0.03" min="0" step="0.01" /></div>
+        </div>
+      </div>
+
+      <!-- FH -->
+      <div class="mb-3">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="gene-badge bg-amber-100 text-amber-800">FH</span>
+          <span class="text-xs text-slate-400">LDLR · PCSK9 · APOB</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><div class="label-sm">LDLR (%)</div><input type="number" id="r_ldlr" class="input-field" value="0.32" min="0" step="0.01" /></div>
+          <div><div class="label-sm">PCSK9 (%)</div><input type="number" id="r_pcsk9" class="input-field" value="0.02" min="0" step="0.01" /></div>
+          <div><div class="label-sm">APOB (%)</div><input type="number" id="r_apob" class="input-field" value="0.09" min="0" step="0.01" /></div>
+        </div>
+      </div>
+
+      <!-- HBOC -->
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="gene-badge bg-purple-100 text-purple-800">HBOC</span>
+          <span class="text-xs text-slate-400">BRCA1 · BRCA2</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><div class="label-sm">BRCA1 (%)</div><input type="number" id="r_brca1" class="input-field" value="0.29" min="0" step="0.01" /></div>
+          <div><div class="label-sm">BRCA2 (%)</div><input type="number" id="r_brca2" class="input-field" value="0.43" min="0" step="0.01" /></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel C: Economic Parameters -->
+    <div class="section-card">
+      <div class="section-title">
+        <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Economic Parameters
+      </div>
+
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <div class="label-sm tooltip-wrap">Screen cost / patient
+              <span class="tip">All-in cost per patient for the genomic panel, lab processing, and report delivery. Does not include GC.</span>
+            </div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_screen" class="input-field pl-5" value="250" min="0" /></div>
+          </div>
+          <div>
+            <div class="label-sm tooltip-wrap">GC cost / positive
+              <span class="tip">Genetic counseling session cost per individual who tests positive.</span>
+            </div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_gc" class="input-field pl-5" value="250" min="0" /></div>
+          </div>
+        </div>
+
+        <hr class="border-slate-100" />
+        <p class="label-sm text-slate-500">Annual Surveillance / Management Cost (per positive)</p>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <div class="label-sm">Lynch ($/yr)</div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_lynch_mgmt" class="input-field pl-5" value="1555" min="0" /></div>
+          </div>
+          <div>
+            <div class="label-sm">FH ($/yr)</div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_fh_mgmt" class="input-field pl-5" value="312" min="0" /></div>
+          </div>
+          <div>
+            <div class="label-sm">HBOC ($/yr)</div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_hboc_mgmt" class="input-field pl-5" value="4200" min="0" /></div>
+          </div>
+          <div>
+            <div class="label-sm tooltip-wrap">Time horizon (yrs)
+              <span class="tip">Years over which downstream costs and benefits are accrued. Typically 10–25 years for population screening models.</span>
+            </div>
+            <input type="number" id="time_horizon" class="input-field" value="50" min="1" max="80" /></div>
+        </div>
+
+        <hr class="border-slate-100" />
+        <p class="label-sm text-slate-500">Averted Treatment Costs (per event prevented)</p>
+        <div class="grid grid-cols-2 gap-2">
+          <div><div class="label-sm">CRC ($)</div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_crc" class="input-field pl-5" value="120000" /></div></div>
+          <div><div class="label-sm">Endometrial ($)</div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_endo" class="input-field pl-5" value="75000" /></div></div>
+          <div><div class="label-sm">CAD event ($)</div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_cad" class="input-field pl-5" value="95000" /></div></div>
+          <div><div class="label-sm">Breast cancer ($)</div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_breast" class="input-field pl-5" value="140000" /></div></div>
+          <div class="col-span-2"><div class="label-sm">Ovarian cancer ($)</div>
+            <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
+            <input type="number" id="cost_ovarian" class="input-field pl-5" value="110000" /></div></div>
+        </div>
+
+        <div>
+          <div class="label-sm tooltip-wrap">Discount rate (%)
+            <span class="tip">Annual discount rate applied to both future costs and QALYs. Standard health economics value is 3% (US) or 3.5% (UK).</span>
+          </div>
+          <input type="number" id="discount_rate" class="input-field" value="3" min="0" max="15" step="0.5" />
+        </div>
+      </div>
+    </div>
+  </div><!-- end row 1 -->
+
+  <!-- ─── CLINICAL ASSUMPTIONS (COLLAPSIBLE) ──────────────────── -->
+  <details class="section-card">
+    <summary class="section-title cursor-pointer mb-0 flex items-center justify-between" style="border-bottom:none;">
+      <span class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        Clinical Assumptions &nbsp;<span class="text-slate-400 font-normal text-xs">(click to expand / edit)</span>
+      </span>
+      <svg class="w-4 h-4 text-slate-400 transition-transform" id="chevron_assumptions" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </summary>
+
+    <div class="mt-4 pt-4 border-t border-slate-100">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- Lynch Assumptions -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="gene-badge bg-emerald-100 text-emerald-800 text-xs">LYNCH SYNDROME</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <div class="label-sm tooltip-wrap">MLH1/MSH2 CRC risk
+                  <span class="tip">Lifetime CRC risk for MLH1 and MSH2 carriers without surveillance. Literature: ~55% (Bonadona 2011).</span>
+                </div>
+                <div class="relative"><input type="number" id="lnch_high_crc" class="input-field" value="55" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">MSH6/PMS2 CRC risk
+                  <span class="tip">Lower penetrance genes. Lifetime CRC risk ~15–25%.</span>
+                </div>
+                <div class="relative"><input type="number" id="lnch_low_crc" class="input-field" value="20" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">Endometrial risk ♀
+                  <span class="tip">Lifetime endometrial cancer risk for MLH1/MSH2/MSH6 female carriers (~40%). PMS2 is lower (~15%).</span>
+                </div>
+                <div class="relative"><input type="number" id="lnch_endo" class="input-field" value="40" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">Surveillance efficacy
+                  <span class="tip">Relative reduction in CRC incidence/mortality with colonoscopy every 1–2 years. Meta-analyses support ~65–70%.</span>
+                </div>
+                <div class="relative"><input type="number" id="lnch_surv_eff" class="input-field" value="65" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">Gynecologic mgmt eff.
+                  <span class="tip">Endometrial cancer reduction with surveillance + prophylactic options. ~60% combined reduction is realistic.</span>
+                </div>
+                <div class="relative"><input type="number" id="lnch_gyno_eff" class="input-field" value="60" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">Surveillance compliance
+                  <span class="tip">% of identified carriers who adhere to recommended surveillance. Typically 60–80% in real-world programs.</span>
+                </div>
+                <div class="relative"><input type="number" id="lnch_compliance" class="input-field" value="80" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div class="col-span-2">
+                <div class="label-sm tooltip-wrap" style="color:#6366f1;font-weight:700;">Prior identification (%)
+                  <span class="tip">Proportion of Lynch carriers already identified through family history or prior testing before population screening — they don't receive incremental benefit. Guzauskas 2023 base case: 13% (range 7–11% overall; Lynch ~13%). Increase to model a population with high prior clinical testing uptake.</span>
+                </div>
+                <div class="relative"><input type="number" id="lnch_prior_id" class="input-field" value="13" min="0" max="100" step="1" style="border-color:#a5b4fc;" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FH Assumptions -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="gene-badge bg-amber-100 text-amber-800 text-xs">FAMILIAL HYPERCHOLESTEROLEMIA</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <div class="label-sm tooltip-wrap">LDLR MACE risk (lifetime)
+                  <span class="tip">Untreated lifetime risk of major adverse cardiovascular event (MI, CV death, stroke) for LDLR pathogenic carriers. ~50% by age 50 in men without treatment.</span>
+                </div>
+                <div class="relative"><input type="number" id="fh_ldlr_risk" class="input-field" value="45" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">PCSK9/APOB MACE risk
+                  <span class="tip">Typically lower than LDLR pathogenic variants. ~25–35% lifetime MACE risk.</span>
+                </div>
+                <div class="relative"><input type="number" id="fh_other_risk" class="input-field" value="30" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">Statin RR reduction
+                  <span class="tip">Relative risk reduction in MACE with high-intensity statin therapy. CTT meta-analysis: ~36% per mmol/L LDL reduction.</span>
+                </div>
+                <div class="relative"><input type="number" id="fh_statin_eff" class="input-field" value="37" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">Treatment compliance
+                  <span class="tip">% of FH carriers identified who initiate and maintain medical therapy. Real-world ~65–75%.</span>
+                </div>
+                <div class="relative"><input type="number" id="fh_compliance" class="input-field" value="60" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">% on PCSK9i (of treated)
+                  <span class="tip">Proportion of treated FH patients escalated to PCSK9 inhibitors (adds ~$7,000/yr). Remainder on statins only.</span>
+                </div>
+                <div class="relative"><input type="number" id="fh_pcsk9i_pct" class="input-field" value="20" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm">PCSK9i add-on cost/yr
+                  <span class="tip">Additional annual cost for PCSK9 inhibitor on top of statin therapy.</span>
+                </div>
+                <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-xs">$</span>
+                <input type="number" id="fh_pcsk9i_cost" class="input-field pl-4" value="7000" /></div>
+              </div>
+              <div class="col-span-2">
+                <div class="label-sm tooltip-wrap" style="color:#6366f1;font-weight:700;">Prior identification (%)
+                  <span class="tip">Proportion of FH carriers already diagnosed (e.g. prior hypercholesterolaemia diagnosis or family testing) before population screening. Guzauskas 2023: 5% (age-based). Carriers already on treatment don't receive the full incremental benefit of screening.</span>
+                </div>
+                <div class="relative"><input type="number" id="fh_prior_id" class="input-field" value="5" min="0" max="100" step="1" style="border-color:#a5b4fc;" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HBOC Assumptions -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="gene-badge bg-purple-100 text-purple-800 text-xs">HBOC</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <div class="label-sm tooltip-wrap">BRCA1 breast risk
+                  <span class="tip">Lifetime breast cancer risk for BRCA1 carriers. Dominant estimate: 72% (Kuchenbaecker 2017).</span>
+                </div>
+                <div class="relative"><input type="number" id="brca1_breast" class="input-field" value="72" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">BRCA1 ovarian risk
+                  <span class="tip">Lifetime ovarian cancer risk for BRCA1 carriers: ~44% (Kuchenbaecker 2017).</span>
+                </div>
+                <div class="relative"><input type="number" id="brca1_ovarian" class="input-field" value="44" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">BRCA2 breast risk
+                  <span class="tip">Lifetime breast cancer risk for BRCA2 carriers: ~69% (Kuchenbaecker 2017).</span>
+                </div>
+                <div class="relative"><input type="number" id="brca2_breast" class="input-field" value="69" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">BRCA2 ovarian risk
+                  <span class="tip">Lifetime ovarian cancer risk for BRCA2 carriers: ~17% (Kuchenbaecker 2017).</span>
+                </div>
+                <div class="relative"><input type="number" id="brca2_ovarian" class="input-field" value="17" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">% prophylactic surgery
+                  <span class="tip">Proportion of female carriers opting for prophylactic mastectomy and/or salpingo-oophorectomy. Mastectomy reduces breast risk ~95%, RRSO reduces ovarian risk ~80%.</span>
+                </div>
+                <div class="relative"><input type="number" id="hboc_prophyl_pct" class="input-field" value="30" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">Surveillance RR red.
+                  <span class="tip">Cancer mortality reduction for carriers on enhanced surveillance (MRI + mammography) vs. no management. ~40% mortality reduction.</span>
+                </div>
+                <div class="relative"><input type="number" id="hboc_surv_eff" class="input-field" value="40" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm">Prophylactic surg. RR red.
+                  <span class="tip">Cancer risk reduction with prophylactic surgery (weighted avg breast+ovarian). ~87% combined.</span>
+                </div>
+                <div class="relative"><input type="number" id="hboc_prophyl_eff" class="input-field" value="87" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div>
+                <div class="label-sm tooltip-wrap">Uptake (any mgmt)
+                  <span class="tip">% of identified BRCA carriers who engage with some form of risk management. Typically 75–85%.</span>
+                </div>
+                <div class="relative"><input type="number" id="hboc_uptake" class="input-field" value="78" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+              <div class="col-span-2">
+                <div class="label-sm tooltip-wrap" style="color:#6366f1;font-weight:700;">Prior identification (%)
+                  <span class="tip">Proportion of BRCA carriers already identified through family history or prior BRCA testing before population screening. Guzauskas 2023: 17% (range ±25%). In populations with strong genetic counseling infrastructure, this may be higher (20–30%), reducing incremental benefit of population screening.</span>
+                </div>
+                <div class="relative"><input type="number" id="hboc_prior_id" class="input-field" value="17" min="0" max="100" step="1" style="border-color:#a5b4fc;" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end grid -->
+
+      <!-- QALY per event prevented by age group -->
+      <div class="mt-6 pt-4 border-t border-slate-100">
+        <p class="label-sm text-slate-600 mb-3">QALY Gained per Event Prevented — by Age Group at Screening
+          <span class="text-slate-400 font-normal normal-case ml-1">(discounted at 3%, includes mortality + morbidity components; based on US life tables)</span>
+        </p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-50">
+                <th class="text-left py-2 px-3 font-semibold text-slate-600 border border-slate-200">Event type</th>
+                <th class="text-center py-2 px-3 font-semibold text-slate-600 border border-slate-200">18–30</th>
+                <th class="text-center py-2 px-3 font-semibold text-slate-600 border border-slate-200">31–45</th>
+                <th class="text-center py-2 px-3 font-semibold text-slate-600 border border-slate-200">46–60</th>
+                <th class="text-center py-2 px-3 font-semibold text-slate-600 border border-slate-200">61–75</th>
+                <th class="text-center py-2 px-3 font-semibold text-slate-600 border border-slate-200">76+</th>
+              </tr>
+            </thead>
+            <tbody id="qaly_table_body">
+              <!-- filled by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <!-- ─── CALCULATE BUTTON ─────────────────────────────────────── -->
+  <div class="flex justify-center">
+    <button onclick="calculate()" class="px-10 py-3.5 rounded-xl font-bold text-white text-sm shadow-lg transition-all active:scale-95"
+      style="background: linear-gradient(135deg, #4338ca, #2563eb);">
+      Calculate Cost-Effectiveness
+    </button>
+  </div>
+
+  <!-- ─── RESULTS ───────────────────────────────────────────────── -->
+  <div id="results_section" class="hidden space-y-6">
+
+    <!-- KPI Row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="result-kpi">
+        <div class="text-3xl font-black text-indigo-700" id="kpi_qaly">—</div>
+        <div class="text-xs text-slate-500 mt-1 font-medium">Total QALYs Gained</div>
+        <div class="text-xs text-slate-400 mt-0.5" id="kpi_qaly_sub"></div>
+      </div>
+      <div class="result-kpi">
+        <div class="text-3xl font-black text-emerald-700" id="kpi_events">—</div>
+        <div class="text-xs text-slate-500 mt-1 font-medium">Clinical Events Prevented</div>
+        <div class="text-xs text-slate-400 mt-0.5" id="kpi_events_sub"></div>
+      </div>
+      <div class="result-kpi">
+        <div class="text-3xl font-black text-blue-700" id="kpi_cost">—</div>
+        <div class="text-xs text-slate-500 mt-1 font-medium">Net Program Cost</div>
+        <div class="text-xs text-slate-400 mt-0.5" id="kpi_cost_sub"></div>
+      </div>
+      <div class="result-kpi">
+        <div class="text-2xl font-black" id="kpi_icer">—</div>
+        <div class="text-xs text-slate-500 mt-1 font-medium">ICER ($/QALY)</div>
+        <div class="mt-2" id="kpi_icer_badge"></div>
+      </div>
+    </div>
+
+    <!-- Charts + Breakdown -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
+      <!-- QALY Bar Chart -->
+      <div class="section-card lg:col-span-2">
+        <div class="section-title">QALYs Gained by Condition</div>
+        <div class="bar-container"><canvas id="qaly_chart"></canvas></div>
+      </div>
+
+      <!-- Events Prevented Chart -->
+      <div class="section-card lg:col-span-2">
+        <div class="section-title">Events Prevented by Type</div>
+        <div class="bar-container"><canvas id="events_chart"></canvas></div>
+      </div>
+
+      <!-- Cost Waterfall -->
+      <div class="section-card lg:col-span-1">
+        <div class="section-title">Cost Flow ($)</div>
+        <div id="cost_breakdown" class="space-y-2 text-sm"></div>
+      </div>
+    </div>
+
+    <!-- Detailed Condition Breakdown -->
+    <div class="section-card">
+      <div class="section-title">Detailed Results by Condition</div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600">
+              <th class="text-left py-2.5 px-3 font-semibold border-b border-slate-200">Condition</th>
+              <th class="text-right py-2.5 px-3 font-semibold border-b border-slate-200">Positives (n)</th>
+              <th class="text-right py-2.5 px-3 font-semibold border-b border-slate-200">Events Prevented</th>
+              <th class="text-right py-2.5 px-3 font-semibold border-b border-slate-200">QALYs Gained</th>
+              <th class="text-right py-2.5 px-3 font-semibold border-b border-slate-200">Mgmt Cost ($)</th>
+              <th class="text-right py-2.5 px-3 font-semibold border-b border-slate-200">Cost Averted ($)</th>
+              <th class="text-right py-2.5 px-3 font-semibold border-b border-slate-200">Condition ICER</th>
+            </tr>
+          </thead>
+          <tbody id="detail_table" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Positives by Gene -->
+    <div class="section-card">
+      <div class="section-title">Identified Variant Carriers by Gene</div>
+      <div id="gene_breakdown" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3"></div>
+    </div>
+
+    <!-- Assumptions footnote -->
+    <div class="text-xs text-slate-400 text-center pb-4 space-y-1">
+      <p>Results assume events follow discounted future risk over the selected time horizon with compliance and efficacy adjustments applied.</p>
+      <p>ICER thresholds: &lt;$50K/QALY = highly cost-effective &nbsp;|&nbsp; $50–100K = cost-effective &nbsp;|&nbsp; $100–150K = borderline &nbsp;|&nbsp; &gt;$150K = above standard threshold.</p>
+      <p>Clinical parameters derived from: Bonadona 2011 (Lynch); Nordestgaard 2016 (FH); Kuchenbaecker 2017 (BRCA). All values are editable above.</p>
+      <p>Default values calibrated to: <strong>Guzauskas GF et al.</strong> Population Genomic Screening for Three Common Hereditary Conditions: A Cost-Effectiveness Analysis. <em>Ann Intern Med.</em> 2023;176:585–595. doi:10.7326/M22-0846</p>
+    </div>
+  </div>
+
+  <!-- ─── SENSITIVITY ANALYSIS ───────────────────────────────────── -->
+  <div id="sa_section" class="hidden space-y-5">
+    <div class="section-card">
+      <div class="section-title">
+        <svg class="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        One-Way Sensitivity Analysis — Tornado Chart
+        <span class="ml-auto text-xs font-normal text-slate-400">Parameter ranges from Guzauskas 2023, Table 1</span>
+      </div>
+      <p class="text-xs text-slate-500 mb-3">Each bar shows the ICER range when one parameter is varied across its plausible range while all others are held at their base-case values. Wider bars indicate greater influence on cost-effectiveness.</p>
+      <div style="height:340px; position:relative;"><canvas id="tornado_chart"></canvas></div>
+      <div id="sa_table" class="mt-4 overflow-x-auto">
+        <table class="w-full text-xs border-collapse">
+          <thead><tr class="bg-slate-50">
+            <th class="py-1.5 px-3 text-left font-semibold text-slate-600 border border-slate-200">Parameter</th>
+            <th class="py-1.5 px-3 text-center font-semibold text-slate-600 border border-slate-200">Low value</th>
+            <th class="py-1.5 px-3 text-center font-semibold text-slate-600 border border-slate-200">ICER (low)</th>
+            <th class="py-1.5 px-3 text-center font-semibold text-slate-600 border border-slate-200">Base ICER</th>
+            <th class="py-1.5 px-3 text-center font-semibold text-slate-600 border border-slate-200">ICER (high)</th>
+            <th class="py-1.5 px-3 text-center font-semibold text-slate-600 border border-slate-200">High value</th>
+          </tr></thead>
+          <tbody id="sa_table_body" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        ICER by Age at Screening
+        <span class="ml-auto text-xs font-normal text-slate-400">Guzauskas 2023, Figure 2 reference values shown</span>
+      </div>
+      <p class="text-xs text-slate-500 mb-3">The <span class="font-semibold text-indigo-600">purple curve</span> is computed live from your current model inputs at each screening age. The <span class="font-semibold text-orange-500">orange dashed curve</span> shows Guzauskas 2023 reference values. The <span class="font-semibold text-indigo-600">diamond</span> marks your current cohort. Change any parameter above and click Calculate to update.</p>
+      <div style="height:300px; position:relative;"><canvas id="age_icer_chart"></canvas></div>
+      <div class="mt-2 text-xs text-slate-400 text-center">Each point on the model curve runs a full calculation assuming 100% of the cohort is screened at that age. Costs use your entered time horizon; events use remaining years of risk from each screening age to age 80.</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─── DEFAULT QALY TABLES ───────────────────────────────────────────
+// QALYs gained per event prevented, by age group [18-30, 31-45, 46-60, 61-75, 76+]
+// Calibrated to Guzauskas et al. 2023 (Ann Intern Med) utility weights with 3% annual
+// discounting. Values reflect discounted lifetime QALYs per prevented event, accounting
+// for: disease utility weights (Table 1), time-to-event discounting, and mix of fatal
+// vs non-fatal events (stage-specific for CRC, breast ca.).
+// Base case: ~495 QALYs per 100,000 screened 30-year-olds (matches Guzauskas 2023).
+const DEFAULT_QALY = {
+  crc:    [4.0, 3.2, 2.3, 1.3, 0.5],
+  endo:   [3.5, 2.8, 2.0, 1.1, 0.4],
+  mace:   [4.0, 3.2, 2.3, 1.3, 0.5],
+  breast: [6.0, 4.9, 3.4, 1.9, 0.8],
+  ovarian:[7.0, 5.7, 4.0, 2.2, 0.9]
+};
+
+const QALY_ROWS = [
+  { key: 'crc',    label: 'CRC (Lynch)',              color: 'bg-emerald-50 text-emerald-900' },
+  { key: 'endo',   label: 'Endometrial (Lynch ♀)',    color: 'bg-emerald-50 text-emerald-900' },
+  { key: 'mace',   label: 'MACE (FH)',                color: 'bg-amber-50 text-amber-900'   },
+  { key: 'breast', label: 'Breast cancer (HBOC)',     color: 'bg-purple-50 text-purple-900' },
+  { key: 'ovarian',label: 'Ovarian cancer (HBOC)',   color: 'bg-purple-50 text-purple-900' }
+];
+
+// ─── BUILD QALY TABLE ──────────────────────────────────────────────
+function buildQalyTable() {
+  const tbody = document.getElementById('qaly_table_body');
+  tbody.innerHTML = '';
+  QALY_ROWS.forEach(row => {
+    const vals = DEFAULT_QALY[row.key];
+    const tr = document.createElement('tr');
+    tr.className = row.color;
+    tr.innerHTML = `<td class="py-2 px-3 border border-slate-200 font-medium">${row.label}</td>` +
+      vals.map((v, i) =>
+        `<td class="py-2 px-3 border border-slate-200 text-center">
+          <input type="number" id="qaly_${row.key}_${i}" class="input-field text-center w-16" value="${v}" step="0.1" min="0" />
+        </td>`
+      ).join('');
+    tbody.appendChild(tr);
+  });
+}
+buildQalyTable();
+
+// ─── AGE SUM WATCHER ──────────────────────────────────────────────
+const AGE_IDS = ['age_18','age_31','age_46','age_61','age_76'];
+function updateAgeSum() {
+  const sum = AGE_IDS.reduce((a,id) => a + (parseFloat(document.getElementById(id).value)||0), 0);
+  const el = document.getElementById('age_sum_display');
+  el.textContent = `Sum: ${sum.toFixed(1)}%`;
+  el.className = `text-xs font-semibold px-2 py-1.5 rounded-md w-full text-center ${Math.abs(sum-100)<0.5 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`;
+}
+AGE_IDS.forEach(id => document.getElementById(id).addEventListener('input', updateAgeSum));
+
+// ─── HELPERS ──────────────────────────────────────────────────────
+const $ = id => parseFloat(document.getElementById(id).value) || 0;
+const fmt = n => n.toLocaleString('en-US', {maximumFractionDigits:0});
+const fmtD = n => n.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
+const fmtM = n => {
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return sign + '$' + fmtD(abs/1e9) + 'B';
+  if (abs >= 1e6) return sign + '$' + fmtD(abs/1e6) + 'M';
+  return sign + '$' + fmt(abs);
+};
+const pct = id => $(id) / 100;
+
+// Age group weights (normalized)
+function ageWeights() {
+  const raw = AGE_IDS.map(id => $(id));
+  const sum = raw.reduce((a,b)=>a+b,0);
+  return sum > 0 ? raw.map(v => v/sum) : raw.map((_,i) => i===2?1:0);
+}
+
+// Weighted avg QALY across age groups for a given event type
+function weightedQaly(eventKey) {
+  const w = ageWeights();
+  let total = 0;
+  for (let i = 0; i < 5; i++) {
+    const val = parseFloat(document.getElementById(`qaly_${eventKey}_${i}`)?.value) || 0;
+    total += w[i] * val;
+  }
+  return total;
+}
+
+// Time horizon discount factor for annuity (PV of $1/yr for T years at rate r)
+// Used for COST calculations (surveillance/management costs over the time horizon).
+function pvFactor() {
+  const r = $('discount_rate') / 100;
+  const T = $('time_horizon');
+  if (r === 0) return T;
+  return (1 - Math.pow(1+r, -T)) / r;
+}
+
+// ─── AGE-SPECIFIC PV FACTORS FOR EVENTS ───────────────────────────
+// Each age group has different remaining years of disease risk from its midpoint
+// to age 80 (end of modelled risk period). Events prevented in older carriers
+// are discounted more heavily because they occur sooner / there is less remaining
+// time horizon. This is the key fix for modelling mixed-age cohorts correctly.
+//   Age group midpoints:  24,  38,  53,  68, 80
+//   Remaining yrs to 80:  56,  42,  27,  12,  0
+const AGE_REMAINING_YRS = [56, 42, 27, 12, 0];
+
+function pvFactorForYrs(yrs) {
+  const r = $('discount_rate') / 100;
+  if (yrs <= 0) return 0;
+  if (r === 0) return yrs;
+  return (1 - Math.pow(1 + r, -yrs)) / r;
+}
+
+// Age-weighted PV factor for events: carriers in each age group contribute
+// differently based on their remaining risk horizon.
+// _overrideEventPvF allows computeIcerAtAge() to inject a specific value.
+let _overrideEventPvF = null;
+function weightedEventPvF() {
+  if (_overrideEventPvF !== null) return _overrideEventPvF;
+  const w = ageWeights();
+  return AGE_REMAINING_YRS.reduce((sum, yrs, i) => sum + w[i] * pvFactorForYrs(yrs), 0);
+}
+
+// Compute ICER for a hypothetical cohort screened entirely at a specific age.
+// Uses exact remaining-risk years for that age rather than bucket midpoints.
+function computeIcerAtAge(age) {
+  const remainingYrs = Math.max(0, 80 - age);
+  // Map to the QALY age bucket for per-event value lookup
+  let bucket = 4;
+  if (age < 31) bucket = 0;
+  else if (age < 46) bucket = 1;
+  else if (age < 61) bucket = 2;
+  else if (age < 76) bucket = 3;
+  const AGE_BUCKET_IDS = ['age_18','age_31','age_46','age_61','age_76'];
+  const ageOverrides = {};
+  AGE_BUCKET_IDS.forEach((id, i) => { ageOverrides[id] = i === bucket ? 100 : 0; });
+  _overrideEventPvF = pvFactorForYrs(remainingYrs);
+  const result = calculateWithOverride(ageOverrides);
+  _overrideEventPvF = null;
+  return result.icer;
+}
+
+// ─── MAIN CALCULATION ─────────────────────────────────────────────
+// calculateCore() returns result object; calculate() renders it.
+// calculateWithOverride(overrides) temporarily sets DOM values, computes, then restores.
+
+function calculateWithOverride(overrides) {
+  const saved = {};
+  for (const [id, val] of Object.entries(overrides)) {
+    const el = document.getElementById(id);
+    if (el) { saved[id] = el.value; el.value = val; }
+  }
+  let result;
+  try { result = calculateCore(); }
+  finally {
+    for (const [id, val] of Object.entries(saved)) {
+      document.getElementById(id).value = val;
+    }
+  }
+  return result;
+}
+
+function calculate() {
+  const d = calculateCore();
+  renderResults(d);
+  runSensitivityAnalysis(d.icer);
+  document.getElementById('sa_section').classList.remove('hidden');
+}
+
+function calculateCore() {
+  const N = $('n_screened');
+  const femalePct = pct('pct_female');
+  const malePct = 1 - femalePct;
+  const pvF  = pvFactor();         // for cost calculations (uses time_horizon input)
+  const ePvF = weightedEventPvF(); // for events calculations (age-stratified, uses remaining risk yrs)
+
+  // Shared costs
+  const costScreen = $('cost_screen');
+  const costGC     = $('cost_gc');
+
+  // ── GENE POSITIVES ──────────────────────────────────────────────
+  const genes = {
+    mlh1:  { n: N * pct('r_mlh1'),  cond:'lynch', pen:'high'   },
+    msh2:  { n: N * pct('r_msh2'),  cond:'lynch', pen:'high'   },
+    msh6:  { n: N * pct('r_msh6'),  cond:'lynch', pen:'low'    },
+    pms2:  { n: N * pct('r_pms2'),  cond:'lynch', pen:'low'    },
+    ldlr:  { n: N * pct('r_ldlr'),  cond:'fh',    pen:'ldlr'   },
+    pcsk9: { n: N * pct('r_pcsk9'), cond:'fh',    pen:'other'  },
+    apob:  { n: N * pct('r_apob'),  cond:'fh',    pen:'other'  },
+    brca1: { n: N * pct('r_brca1'), cond:'hboc',  pen:'brca1'  },
+    brca2: { n: N * pct('r_brca2'), cond:'hboc',  pen:'brca2'  },
+  };
+
+  const lynchN = genes.mlh1.n + genes.msh2.n + genes.msh6.n + genes.pms2.n;
+  const fhN    = genes.ldlr.n + genes.pcsk9.n + genes.apob.n;
+  const hbocN  = genes.brca1.n + genes.brca2.n;
+  const totalPositives = lynchN + fhN + hbocN;
+
+  // ── LYNCH ────────────────────────────────────────────────────────
+  const lnchHighN = genes.mlh1.n + genes.msh2.n;
+  const lnchLowN  = genes.msh6.n + genes.pms2.n;
+
+  const lnchCrcRiskHigh = pct('lnch_high_crc');
+  const lnchCrcRiskLow  = pct('lnch_low_crc');
+  const lnchSurvEff     = pct('lnch_surv_eff');
+  const lnchGynoEff     = pct('lnch_gyno_eff');
+  const lnchCompliance  = pct('lnch_compliance');
+  const lnchEndoRisk    = pct('lnch_endo');
+
+  // ── Annual-incidence × PV-annuity approach (Guzauskas 2023 calibrated) ──────
+  // Converts lifetime penetrance to an annual incidence rate by dividing by the
+  // number of years over which that risk accrues from the screening age (~30 y).
+  // Events prevented = carriers × (lifetime_risk / accrual_yrs) × efficacy
+  //                    × compliance × pvFactor × (1 − prior_identification)
+  // This mirrors the structure of a Markov model and correctly discounts future
+  // events via pvF rather than applying full lifetime risk at once.
+  // Accrual years calibrated so base-case outputs match Guzauskas 2023 Table 2.
+  const LYNCH_ACCRUAL_YRS = 50;   // CRC/endo risk accrues ~age 30–80
+  const lnchPriorId = pct('lnch_prior_id');
+
+  const crcPrevHighPerCarrier = (lnchCrcRiskHigh / LYNCH_ACCRUAL_YRS) * lnchSurvEff * lnchCompliance * ePvF * (1 - lnchPriorId);
+  const crcPrevLowPerCarrier  = (lnchCrcRiskLow  / LYNCH_ACCRUAL_YRS) * lnchSurvEff * lnchCompliance * ePvF * (1 - lnchPriorId);
+  const endoPrevPerCarrier    = (lnchEndoRisk     / LYNCH_ACCRUAL_YRS) * lnchGynoEff * lnchCompliance * ePvF * (1 - lnchPriorId);
+
+  const lynchCrcPrev   = lnchHighN * crcPrevHighPerCarrier + lnchLowN * crcPrevLowPerCarrier;
+  const lynchEndoPrev  = lynchN * femalePct * endoPrevPerCarrier;
+  const lynchTotalEvents = lynchCrcPrev + lynchEndoPrev;
+
+  const qalyPerCrc  = weightedQaly('crc');
+  const qalyPerEndo = weightedQaly('endo');
+  const lynchQalys  = lynchCrcPrev * qalyPerCrc + lynchEndoPrev * qalyPerEndo;
+
+  // Lynch costs
+  const lynchScreenCost = lynchN * costGC;
+  const lynchMgmtCost   = lynchN * $('cost_lynch_mgmt') * pvF;
+  const lynchAvertedCost = lynchCrcPrev * $('cost_crc') + lynchEndoPrev * $('cost_endo');
+  const lynchNetCost    = lynchMgmtCost + lynchScreenCost - lynchAvertedCost;
+  const lynchICER = lynchQalys > 0 ? lynchNetCost / lynchQalys : Infinity;
+
+  // ── FH ──────────────────────────────────────────────────────────
+  const fhLdlrN  = genes.ldlr.n;
+  const fhOtherN = genes.pcsk9.n + genes.apob.n;
+
+  const fhLdlrRisk  = pct('fh_ldlr_risk');
+  const fhOtherRisk = pct('fh_other_risk');
+  const fhStatinEff = pct('fh_statin_eff');
+  const fhCompliance = pct('fh_compliance');
+  const fhPcsk9iPct = pct('fh_pcsk9i_pct');
+  const FH_ACCRUAL_YRS = 60;   // CV risk accrues ~age 30–90 for FH carriers
+  const fhPriorId = pct('fh_prior_id');
+
+  const macePrevLdlr  = fhLdlrN  * (fhLdlrRisk  / FH_ACCRUAL_YRS) * fhStatinEff * fhCompliance * ePvF * (1 - fhPriorId);
+  const macePrevOther = fhOtherN * (fhOtherRisk  / FH_ACCRUAL_YRS) * fhStatinEff * fhCompliance * ePvF * (1 - fhPriorId);
+  const fhMacePrev    = macePrevLdlr + macePrevOther;
+
+  const qalyPerMace = weightedQaly('mace');
+  const fhQalys     = fhMacePrev * qalyPerMace;
+
+  // FH treatment cost: base cost_fh_mgmt already in input, add PCSK9i premium
+  const fhPcsk9iPremium = $('fh_pcsk9i_pct') / 100 * $('fh_pcsk9i_cost');
+  const fhAnnualTxCost  = $('cost_fh_mgmt') + fhPcsk9iPremium;
+  const fhScreenCost  = fhN * costGC;
+  const fhMgmtCost    = fhN * fhCompliance * fhAnnualTxCost * pvF;
+  const fhAvertedCost = fhMacePrev * $('cost_cad');
+  const fhNetCost     = fhMgmtCost + fhScreenCost - fhAvertedCost;
+  const fhICER = fhQalys > 0 ? fhNetCost / fhQalys : Infinity;
+
+  // ── HBOC ────────────────────────────────────────────────────────
+  const brca1N = genes.brca1.n;
+  const brca2N = genes.brca2.n;
+  // Males have lower breast/prostate risk — use 10% of female QALY for simplicity
+  const hbocFemaleN = hbocN * femalePct;
+  const hbocMaleN   = hbocN * malePct;
+
+  const brca1BreastRisk  = pct('brca1_breast');
+  const brca1OvarianRisk = pct('brca1_ovarian');
+  const brca2BreastRisk  = pct('brca2_breast');
+  const brca2OvarianRisk = pct('brca2_ovarian');
+
+  const hbocUptake      = pct('hboc_uptake');
+  const prophylPct      = pct('hboc_prophyl_pct');   // proportion choosing prophylaxis
+  const survPct         = hbocUptake - prophylPct * hbocUptake; // rest on surveillance
+  const prophylEff      = pct('hboc_prophyl_eff');
+  const survEff         = pct('hboc_surv_eff');
+
+  // Effective weighted risk reduction
+  const effRiskRed = (prophylPct * prophylEff + (1 - prophylPct) * survEff) * hbocUptake;
+
+  // HBOC uses separate accrual years for breast vs ovarian: ovarian cancer benefit
+  // accrues more slowly (risk concentrated ages 45–70; fewer discounted events for
+  // a 30-y-old cohort). Calibrated to Guzauskas 2023 Table 2 (40 breast, 7 ovarian
+  // per 100,000 screened 30-year-olds).
+  const HBOC_BREAST_ACCRUAL_YRS   = 60;
+  const HBOC_OVARIAN_ACCRUAL_YRS  = 135;
+  const hbocPriorId = pct('hboc_prior_id');
+
+  // Female carriers
+  const brca1F = brca1N * femalePct;
+  const brca2F = brca2N * femalePct;
+  const hbocBreastPrev  = (brca1F * (brca1BreastRisk  / HBOC_BREAST_ACCRUAL_YRS)  + brca2F * (brca2BreastRisk  / HBOC_BREAST_ACCRUAL_YRS))  * effRiskRed * ePvF * (1 - hbocPriorId);
+  const hbocOvarianPrev = (brca1F * (brca1OvarianRisk / HBOC_OVARIAN_ACCRUAL_YRS) + brca2F * (brca2OvarianRisk / HBOC_OVARIAN_ACCRUAL_YRS)) * effRiskRed * ePvF * (1 - hbocPriorId);
+
+  const qalyPerBreast  = weightedQaly('breast');
+  const qalyPerOvarian = weightedQaly('ovarian');
+  const hbocQalys = hbocBreastPrev * qalyPerBreast + hbocOvarianPrev * qalyPerOvarian
+                  + hbocMaleN * 0.05 * (brca1BreastRisk / HBOC_BREAST_ACCRUAL_YRS) * ePvF * (1 - hbocPriorId) * qalyPerBreast; // male BRCA modest benefit
+
+  const hbocScreenCost  = hbocN * costGC;
+  const hbocMgmtCost    = hbocN * hbocUptake * $('cost_hboc_mgmt') * pvF;
+  const hbocAvertedCost = hbocBreastPrev * $('cost_breast') + hbocOvarianPrev * $('cost_ovarian');
+  const hbocNetCost     = hbocMgmtCost + hbocScreenCost - hbocAvertedCost;
+  const hbocICER = hbocQalys > 0 ? hbocNetCost / hbocQalys : Infinity;
+
+  // ── TOTALS ──────────────────────────────────────────────────────
+  const totalQalys  = lynchQalys + fhQalys + hbocQalys;
+  const totalEvents = lynchTotalEvents + fhMacePrev + hbocBreastPrev + hbocOvarianPrev;
+
+  const baseProgramCost = N * costScreen + totalPositives * costGC;
+  const totalMgmtCost   = lynchMgmtCost + fhMgmtCost + hbocMgmtCost;
+  const totalAvertedCost = lynchAvertedCost + fhAvertedCost + hbocAvertedCost;
+  const netCost = baseProgramCost + totalMgmtCost - totalAvertedCost;
+  const icer    = totalQalys > 0 ? netCost / totalQalys : Infinity;
+
+  // ── RETURN ──────────────────────────────────────────────────────
+  return {
+    genes, lynchN, fhN, hbocN, totalPositives,
+    lynchCrcPrev, lynchEndoPrev, lynchTotalEvents, lynchQalys,
+    lynchNetCost: lynchMgmtCost + lynchScreenCost, lynchAvertedCost, lynchICER,
+    fhMacePrev, fhQalys, fhNetCost: fhMgmtCost + fhScreenCost, fhAvertedCost, fhICER,
+    hbocBreastPrev, hbocOvarianPrev,
+    hbocTotalEvents: hbocBreastPrev + hbocOvarianPrev,
+    hbocQalys, hbocNetCost: hbocMgmtCost + hbocScreenCost, hbocAvertedCost, hbocICER,
+    totalQalys, totalEvents, netCost, icer,
+    baseProgramCost, totalMgmtCost, totalAvertedCost
+  };
+}
+
+// ─── ICER BADGE ───────────────────────────────────────────────────
+function icerBadge(icer) {
+  if (icer < 0)         return { cls:'bg-green-100 text-green-800', label:'Cost-saving (dominant)' };
+  if (icer < 50000)     return { cls:'bg-green-100 text-green-800', label:'Highly cost-effective' };
+  if (icer < 100000)    return { cls:'bg-blue-100 text-blue-800',   label:'Cost-effective' };
+  if (icer < 150000)    return { cls:'bg-yellow-100 text-yellow-800',label:'Borderline' };
+  return                       { cls:'bg-red-100 text-red-800',     label:'Above standard threshold' };
+}
+
+// ─── RENDER FUNCTION ──────────────────────────────────────────────
+let qalyChart = null, eventsChart = null;
+
+function renderResults(d) {
+  document.getElementById('results_section').classList.remove('hidden');
+
+  // KPIs
+  document.getElementById('kpi_qaly').textContent   = fmtD(d.totalQalys);
+  document.getElementById('kpi_qaly_sub').textContent = `${fmtD(d.totalQalys / Math.max(d.totalPositives,1))} per positive`;
+  document.getElementById('kpi_events').textContent  = fmtD(d.totalEvents);
+  document.getElementById('kpi_events_sub').textContent = `across all conditions`;
+  document.getElementById('kpi_cost').textContent    = fmtM(d.netCost);
+  document.getElementById('kpi_cost_sub').textContent= d.netCost < 0 ? 'Net cost savings' : 'Net incremental cost';
+
+  const iDiv  = document.getElementById('kpi_icer');
+  const iBadge = document.getElementById('kpi_icer_badge');
+  const badge  = icerBadge(d.icer);
+  if (d.icer < 0) {
+    iDiv.textContent = 'Cost-saving';
+    iDiv.className = 'text-2xl font-black text-green-600';
+  } else {
+    iDiv.textContent = fmtM(d.icer);
+    iDiv.className = 'text-2xl font-black text-slate-800';
+  }
+  iBadge.innerHTML = `<span class="icer-badge ${badge.cls}">${badge.label}</span>`;
+
+  // QALY Chart
+  if (qalyChart) qalyChart.destroy();
+  qalyChart = new Chart(document.getElementById('qaly_chart'), {
+    type: 'bar',
+    data: {
+      labels: ['Lynch Syndrome', 'FH', 'HBOC'],
+      datasets: [{
+        label: 'QALYs Gained',
+        data: [d.lynchQalys, d.fhQalys, d.hbocQalys],
+        backgroundColor: ['#10b981','#f59e0b','#8b5cf6'],
+        borderRadius: 6, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' ' + fmtD(ctx.raw) + ' QALYs' } }
+      },
+      scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } },
+        title: { display: true, text: 'QALYs', font: { size: 11 } } },
+        x: { ticks: { font: { size: 11 } } } }
+    }
+  });
+
+  // Events Chart
+  if (eventsChart) eventsChart.destroy();
+  eventsChart = new Chart(document.getElementById('events_chart'), {
+    type: 'bar',
+    data: {
+      labels: ['CRC', 'Endometrial', 'MACE', 'Breast Ca.', 'Ovarian Ca.'],
+      datasets: [{
+        label: 'Events Prevented',
+        data: [d.lynchCrcPrev, d.lynchEndoPrev, d.fhMacePrev, d.hbocBreastPrev, d.hbocOvarianPrev],
+        backgroundColor: ['#10b981','#34d399','#f59e0b','#8b5cf6','#a78bfa'],
+        borderRadius: 6, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' ' + fmtD(ctx.raw) + ' events' } }
+      },
+      scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } },
+        title: { display: true, text: 'Events', font: { size: 11 } } },
+        x: { ticks: { font: { size: 11 } } } }
+    }
+  });
+
+  // Cost Waterfall
+  const items = [
+    { label: 'Panel cost', value:  d.baseProgramCost,     sign:1, color:'text-red-600' },
+    { label: 'Mgmt cost',  value:  d.totalMgmtCost,       sign:1, color:'text-red-600' },
+    { label: 'Cost averted', value: d.totalAvertedCost,   sign:-1, color:'text-green-600' },
+    { label: 'Net cost',   value:  d.netCost,              sign:1,  color: d.netCost < 0 ? 'text-green-700 font-bold' : 'text-slate-800 font-bold' },
+  ];
+  document.getElementById('cost_breakdown').innerHTML = items.map(item => `
+    <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+      <span class="text-slate-500">${item.label}</span>
+      <span class="${item.color}">${item.sign === -1 ? '−' : '+'}${fmtM(Math.abs(item.value))}</span>
+    </div>`).join('');
+
+  // Detail Table
+  const conditions = [
+    {
+      name: 'Lynch Syndrome', color:'bg-emerald-50',
+      positives: d.lynchN,
+      events: `${fmtD(d.lynchCrcPrev)} CRC, ${fmtD(d.lynchEndoPrev)} endometrial`,
+      totalEvents: d.lynchTotalEvents,
+      qalys: d.lynchQalys, mgmtCost: d.lynchNetCost,
+      averted: d.lynchAvertedCost, icer: d.lynchICER
+    },
+    {
+      name: 'FH', color:'bg-amber-50',
+      positives: d.fhN,
+      events: `${fmtD(d.fhMacePrev)} MACE events`,
+      totalEvents: d.fhMacePrev,
+      qalys: d.fhQalys, mgmtCost: d.fhNetCost,
+      averted: d.fhAvertedCost, icer: d.fhICER
+    },
+    {
+      name: 'HBOC', color:'bg-purple-50',
+      positives: d.hbocN,
+      events: `${fmtD(d.hbocBreastPrev)} breast, ${fmtD(d.hbocOvarianPrev)} ovarian`,
+      totalEvents: d.hbocTotalEvents,
+      qalys: d.hbocQalys, mgmtCost: d.hbocNetCost,
+      averted: d.hbocAvertedCost, icer: d.hbocICER
+    }
+  ];
+
+  document.getElementById('detail_table').innerHTML = conditions.map(c => {
+    const ib = icerBadge(c.icer);
+    const icerTxt = c.icer < 0 ? 'Cost-saving' : c.icer === Infinity ? 'N/A' : fmtM(c.icer);
+    return `<tr class="${c.color}">
+      <td class="py-2.5 px-3 font-semibold text-slate-800">${c.name}</td>
+      <td class="py-2.5 px-3 text-right">${fmtD(c.positives)}</td>
+      <td class="py-2.5 px-3 text-right">${c.events}</td>
+      <td class="py-2.5 px-3 text-right font-semibold">${fmtD(c.qalys)}</td>
+      <td class="py-2.5 px-3 text-right">${fmtM(c.mgmtCost)}</td>
+      <td class="py-2.5 px-3 text-right text-green-700">${fmtM(c.averted)}</td>
+      <td class="py-2.5 px-3 text-right"><span class="icer-badge text-xs py-0.5 ${ib.cls}">${icerTxt}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Gene breakdown
+  const geneData = [
+    { label:'MLH1',  n:d.genes.mlh1.n,  color:'bg-emerald-100 text-emerald-800' },
+    { label:'MSH2',  n:d.genes.msh2.n,  color:'bg-emerald-100 text-emerald-800' },
+    { label:'MSH6',  n:d.genes.msh6.n,  color:'bg-emerald-100 text-emerald-800' },
+    { label:'PMS2',  n:d.genes.pms2.n,  color:'bg-emerald-100 text-emerald-800' },
+    { label:'LDLR',  n:d.genes.ldlr.n,  color:'bg-amber-100 text-amber-800' },
+    { label:'PCSK9', n:d.genes.pcsk9.n, color:'bg-amber-100 text-amber-800' },
+    { label:'APOB',  n:d.genes.apob.n,  color:'bg-amber-100 text-amber-800' },
+    { label:'BRCA1', n:d.genes.brca1.n, color:'bg-purple-100 text-purple-800' },
+    { label:'BRCA2', n:d.genes.brca2.n, color:'bg-purple-100 text-purple-800' },
+  ];
+  document.getElementById('gene_breakdown').innerHTML = geneData.map(g => `
+    <div class="rounded-lg p-3 ${g.color} text-center">
+      <div class="font-bold text-sm">${g.label}</div>
+      <div class="text-lg font-black">${fmtD(g.n)}</div>
+      <div class="text-xs opacity-70">identified</div>
+    </div>`).join('');
+
+  document.getElementById('results_section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── SENSITIVITY ANALYSIS ─────────────────────────────────────────
+// Parameter definitions with plausible ranges from Guzauskas 2023 Table 1
+const SA_PARAMS = [
+  { label: 'Screening assay cost ($)',        id: 'cost_screen',      low: 188,  high: 313,  fmt: v => '$'+v },
+  { label: 'GC / confirmatory cost ($)',      id: 'cost_gc',          low: 188,  high: 313,  fmt: v => '$'+v },
+  { label: 'LS prior identification (%)',     id: 'lnch_prior_id',    low: 7,    high: 19,   fmt: v => v+'%' },
+  { label: 'HBOC prior identification (%)',   id: 'hboc_prior_id',    low: 9,    high: 25,   fmt: v => v+'%' },
+  { label: 'FH prior identification (%)',     id: 'fh_prior_id',      low: 1,    high: 9,    fmt: v => v+'%' },
+  { label: 'LS colonoscopy adherence (%)',    id: 'lnch_compliance',  low: 60,   high: 100,  fmt: v => v+'%' },
+  { label: 'FH statin uptake (%)',            id: 'fh_compliance',    low: 45,   high: 75,   fmt: v => v+'%' },
+  { label: 'HBOC any-mgmt uptake (%)',        id: 'hboc_uptake',      low: 60,   high: 95,   fmt: v => v+'%' },
+  { label: 'Discount rate (%)',               id: 'discount_rate',    low: 0,    high: 5,    fmt: v => v+'%' },
+  { label: 'Lynch CRC risk – MLH1/MSH2 (%)', id: 'lnch_high_crc',   low: 44,   high: 66,   fmt: v => v+'%' },
+  { label: 'BRCA1 lifetime breast risk (%)',  id: 'brca1_breast',     low: 58,   high: 86,   fmt: v => v+'%' },
+];
+
+let tornadoChart = null, ageIcerChart = null;
+
+function runSensitivityAnalysis(baseIcer) {
+  const results = SA_PARAMS.map(p => {
+    const rLow  = calculateWithOverride({ [p.id]: p.low  });
+    const rHigh = calculateWithOverride({ [p.id]: p.high });
+    return {
+      label:    p.label,
+      fmt:      p.fmt,
+      paramLow: p.low,
+      paramHigh:p.high,
+      icerLow:  rLow.icer,
+      icerHigh: rHigh.icer,
+      range:    Math.abs(rHigh.icer - rLow.icer)
+    };
+  });
+
+  // Sort widest range first (tornado ordering)
+  results.sort((a, b) => b.range - a.range);
+  renderTornado(results, baseIcer);
+  renderAgeIcerChart(baseIcer);
+}
+
+function renderTornado(results, baseIcer) {
+  const WTP = 100000;
+  const labels   = results.map(r => r.label);
+  const lows     = results.map(r => Math.min(r.icerLow, r.icerHigh));
+  const highs    = results.map(r => Math.max(r.icerLow, r.icerHigh));
+  const midpoint = results.map(() => baseIcer);
+
+  if (tornadoChart) tornadoChart.destroy();
+  tornadoChart = new Chart(document.getElementById('tornado_chart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Low',
+          data: lows.map(v => v < 0 ? 0 : v),
+          backgroundColor: 'rgba(99,102,241,0.6)',
+          borderColor:     'rgba(99,102,241,0.9)',
+          borderWidth: 1, borderRadius: 3, borderSkipped: false
+        },
+        {
+          label: 'High',
+          data: highs.map((v,i) => v - Math.max(lows[i],0)),
+          backgroundColor: 'rgba(244,114,182,0.55)',
+          borderColor:     'rgba(244,114,182,0.85)',
+          borderWidth: 1, borderRadius: 3, borderSkipped: false
+        }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: ctx => ctx[0].label,
+            label: ctx => {
+              const i = ctx.dataIndex;
+              const r = results[i];
+              return [
+                ` Low (${r.fmt(r.paramLow)}): ${fmtM(r.icerLow)}/QALY`,
+                ` High (${r.fmt(r.paramHigh)}): ${fmtM(r.icerHigh)}/QALY`,
+                ` Base: ${fmtM(baseIcer)}/QALY`
+              ];
+            }
+          }
+        },
+        annotation: {
+          annotations: {
+            wtp: { type:'line', scaleID:'x', value: WTP,
+              borderColor:'rgba(239,68,68,0.7)', borderWidth:2, borderDash:[5,4],
+              label:{ content:'$100K WTP', enabled:true, position:'start',
+                font:{size:10}, color:'#ef4444', backgroundColor:'rgba(255,255,255,0.8)' }}
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true, beginAtZero: true,
+          ticks: { font:{size:10}, callback: v => '$'+Math.round(v/1000)+'K' },
+          title: { display:true, text:'ICER ($/QALY)', font:{size:11} }
+        },
+        y: { stacked: true, ticks:{ font:{size:10} } }
+      }
+    }
+  });
+
+  // Populate SA table
+  const tbody = document.getElementById('sa_table_body');
+  tbody.innerHTML = results.map((r, idx) => {
+    const rowClass = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+    const icerL = r.icerLow  < 0 ? '<span class="text-green-600 font-semibold">Cost-saving</span>' : fmtM(r.icerLow);
+    const icerH = r.icerHigh < 0 ? '<span class="text-green-600 font-semibold">Cost-saving</span>' : fmtM(r.icerHigh);
+    const icerB = baseIcer   < 0 ? '<span class="text-green-600 font-semibold">Cost-saving</span>' : fmtM(baseIcer);
+    return `<tr class="${rowClass}">
+      <td class="py-1.5 px-3 font-medium text-slate-700 border border-slate-200">${r.label}</td>
+      <td class="py-1.5 px-3 text-center text-slate-500 border border-slate-200">${r.fmt(r.paramLow)}</td>
+      <td class="py-1.5 px-3 text-center border border-slate-200">${icerL}/QALY</td>
+      <td class="py-1.5 px-3 text-center font-semibold text-slate-800 border border-slate-200 bg-indigo-50">${icerB}/QALY</td>
+      <td class="py-1.5 px-3 text-center border border-slate-200">${icerH}/QALY</td>
+      <td class="py-1.5 px-3 text-center text-slate-500 border border-slate-200">${r.fmt(r.paramHigh)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Age-at-screening reference values from Guzauskas 2023 Figure 2 / Results text
+// ICER for cohorts screened at ages 20, 30, 40, 50, 60 (base-case model, 30-y-olds as anchor)
+const GUZAUSKAS_AGE_ICER = [
+  { age: 20, icer: 72000  },
+  { age: 30, icer: 68600  },
+  { age: 40, icer: 89400  },
+  { age: 50, icer: 135000 },
+  { age: 60, icer: 242000 },
+];
+
+function renderAgeIcerChart(userIcer) {
+  // Compute model ICER at each screening age using current parameter inputs
+  const SCREEN_AGES = [20, 25, 30, 35, 40, 45, 50, 55, 60];
+  const modelCurve = SCREEN_AGES.map(age => ({ x: age, y: computeIcerAtAge(age) }));
+
+  // User's cohort weighted-average age (for the "your cohort" marker)
+  const AGE_MIDS = [24, 38, 53, 68, 80];
+  const w = ageWeights();
+  const userAgeMid = w.reduce((sum, wi, i) => sum + wi * AGE_MIDS[i], 0);
+
+  if (ageIcerChart) ageIcerChart.destroy();
+  ageIcerChart = new Chart(document.getElementById('age_icer_chart'), {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: 'Your model (computed)',
+          data: modelCurve,
+          borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.07)',
+          fill: true, tension: 0.3,
+          pointRadius: 4, pointBackgroundColor: '#6366f1', pointBorderColor: '#fff', pointBorderWidth: 1.5,
+          borderWidth: 2.5
+        },
+        {
+          label: 'Guzauskas 2023 (reference)',
+          data: GUZAUSKAS_AGE_ICER.map(d => ({ x: d.age, y: d.icer })),
+          borderColor: '#f97316', backgroundColor: 'transparent',
+          tension: 0.35,
+          pointRadius: 5, pointBackgroundColor: '#f97316', pointBorderColor: '#fff', pointBorderWidth: 1.5,
+          borderWidth: 2, borderDash: [5, 4]
+        },
+        {
+          label: 'Your cohort',
+          data: [{ x: userAgeMid, y: userIcer < 0 ? 0 : userIcer }],
+          borderColor: '#6366f1', backgroundColor: '#6366f1',
+          pointStyle: 'rectRot', pointRadius: 10, pointBorderWidth: 2, pointBorderColor: '#fff',
+          type: 'scatter', showLine: false
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { font: { size: 11 }, boxWidth: 20 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.raw.y;
+              const s = v >= 200000 ? fmtM(v) + '+ /QALY' : fmtM(v) + '/QALY';
+              if (ctx.dataset.label.startsWith('Your model'))   return ` Model at age ${ctx.raw.x}: ${s}`;
+              if (ctx.dataset.label.startsWith('Guzauskas'))    return ` Reference at age ${ctx.raw.x}: ${s}`;
+              return ` Your cohort (mean age ~${Math.round(ctx.raw.x)}): ${s}`;
+            }
+          }
+        },
+        annotation: {
+          annotations: {
+            wtp50: {
+              type: 'line', scaleID: 'y', value: 50000,
+              borderColor: 'rgba(16,185,129,0.55)', borderWidth: 1.5, borderDash: [4, 4],
+              label: { content: '$50K — highly cost-effective', enabled: true, position: 'start',
+                font: { size: 9 }, color: '#059669', backgroundColor: 'rgba(255,255,255,0.85)' }
+            },
+            wtp100: {
+              type: 'line', scaleID: 'y', value: 100000,
+              borderColor: 'rgba(239,68,68,0.65)', borderWidth: 2, borderDash: [6, 4],
+              label: { content: '$100K — WTP threshold', enabled: true, position: 'end',
+                font: { size: 10 }, color: '#ef4444', backgroundColor: 'rgba(255,255,255,0.85)' }
+            },
+            wtp150: {
+              type: 'line', scaleID: 'y', value: 150000,
+              borderColor: 'rgba(239,68,68,0.35)', borderWidth: 1.5, borderDash: [4, 4],
+              label: { content: '$150K — borderline', enabled: true, position: 'start',
+                font: { size: 9 }, color: '#dc2626', backgroundColor: 'rgba(255,255,255,0.85)' }
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear', min: 18, max: 62,
+          title: { display: true, text: 'Age at Screening (years)', font: { size: 11 } },
+          ticks: { font: { size: 11 }, stepSize: 5, callback: v => 'Age ' + v }
+        },
+        y: {
+          beginAtZero: true, max: 260000,
+          title: { display: true, text: 'ICER ($/QALY)', font: { size: 11 } },
+          ticks: { font: { size: 11 }, callback: v => '$' + Math.round(v / 1000) + 'K' }
+        }
+      }
+    }
+  });
+}
+
+// Run on load with defaults
+document.addEventListener('DOMContentLoaded', () => { /* auto-run optional */ });
+</script>
+</body>
+</html>
