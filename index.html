@@ -204,7 +204,14 @@
           </div>
           <div>
             <div class="label-sm tooltip-wrap">Time horizon (yrs)
-              <span class="tip">Years over which downstream costs and benefits are accrued. Typically 10–25 years for population screening models.</span>
+              <span class="tip" style="width:260px;white-space:pre-line">Controls how long management/surveillance costs accumulate (pvF annuity). Does NOT affect events prevented, which use age-stratified remaining-risk years instead.
+
+Guidance:
+• 50 yr — lifetime horizon; matches Guzauskas 2023 at age 30; best for CEA comparisons
+• 25–30 yr — appropriate for a mixed-age cohort (default age distribution, mean ~50 yrs)
+• 10–20 yr — conservative program planning or budget-impact perspective
+
+Range tested in sensitivity analysis: 20–50 yr.</span>
             </div>
             <input type="number" id="time_horizon" class="input-field" value="50" min="1" max="80" /></div>
         </div>
