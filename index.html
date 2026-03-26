@@ -182,6 +182,19 @@
             <div class="relative"><span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">$</span>
             <input type="number" id="cost_gc" class="input-field pl-5" value="50" min="0" /></div>
           </div>
+          <div>
+            <div class="label-sm tooltip-wrap">GC uptake (%)
+              <span class="tip" style="width:240px;white-space:pre-line">Proportion of identified positives who complete genetic counseling. Applies to both the GC cost and GC revenue lines.
+
+Typical ranges:
+• 70–85% — real-world programs with active outreach
+• 50–65% — passive referral without dedicated follow-up
+• 90–100% — integrated or hospital-based programs
+
+Does not affect management uptake (set separately per condition).</span>
+            </div>
+            <div class="relative"><input type="number" id="gc_uptake" class="input-field" value="80" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">%</span></div>
+          </div>
         </div>
 
         <hr class="border-slate-100" />
@@ -964,6 +977,7 @@ function calculateCore() {
   // Shared costs
   const costScreen = $('cost_screen');
   const costGC     = $('cost_gc');
+  const gcUptake   = pct('gc_uptake');
 
   // ── GENE POSITIVES ──────────────────────────────────────────────
   const includePalb2 = document.getElementById('include_palb2').checked;
@@ -1041,7 +1055,7 @@ function calculateCore() {
   const lynchQalys  = lynchCrcPrev * qalyPerCrc + lynchEndoPrev * qalyPerEndo;
 
   // Lynch costs
-  const lynchScreenCost = effLynchN * costGC;
+  const lynchScreenCost = effLynchN * gcUptake * costGC;
   const lynchMgmtCost   = effLynchN * $('cost_lynch_mgmt') * pvF;
   const lynchAvertedCrc  = lynchCrcPrev * $('cost_crc');
   const lynchAvertedEndo = lynchEndoPrev * $('cost_endo');
@@ -1071,7 +1085,7 @@ function calculateCore() {
   // FH treatment cost: base cost_fh_mgmt already in input, add PCSK9i premium
   const fhPcsk9iPremium = $('fh_pcsk9i_pct') / 100 * $('fh_pcsk9i_cost');
   const fhAnnualTxCost  = $('cost_fh_mgmt') + fhPcsk9iPremium;
-  const fhScreenCost  = effFhN * costGC;
+  const fhScreenCost  = effFhN * gcUptake * costGC;
   const fhMgmtCost    = effFhN * fhCompliance * fhAnnualTxCost * pvF;
   const fhAvertedCost = fhMacePrev * $('cost_cad');
   const fhNetCost     = fhMgmtCost + fhScreenCost - fhAvertedCost;
@@ -1122,7 +1136,7 @@ function calculateCore() {
   const hbocQalys = hbocBreastPrev * qalyPerBreast + hbocOvarianPrev * qalyPerOvarian
                   + hbocMaleN * 0.05 * (brca1BreastRisk / HBOC_BREAST_ACCRUAL_YRS) * ePvF * (1 - hbocPriorId) * qalyPerBreast; // male BRCA modest benefit
 
-  const hbocScreenCost  = effHbocN * costGC;
+  const hbocScreenCost  = effHbocN * gcUptake * costGC;
   const hbocMgmtCost    = effHbocN * hbocUptake * $('cost_hboc_mgmt') * pvF;
   const hbocAvertedBreast  = hbocBreastPrev  * $('cost_breast');
   const hbocAvertedOvarian = hbocOvarianPrev * $('cost_ovarian');
@@ -1135,7 +1149,7 @@ function calculateCore() {
   const totalEvents = lynchTotalEvents + fhMacePrev + hbocBreastPrev + hbocOvarianPrev;
 
   const panelTestCost   = N * costScreen;
-  const gcCost          = effTotalPositives * costGC;
+  const gcCost          = effTotalPositives * gcUptake * costGC;
   const baseProgramCost = panelTestCost + gcCost;
   const totalMgmtCost   = lynchMgmtCost + fhMgmtCost + hbocMgmtCost;
   const totalAvertedCost = lynchAvertedCost + fhAvertedCost + hbocAvertedCost;
@@ -1148,7 +1162,7 @@ function calculateCore() {
   // All revenue lines are scaled by the payor-mix blended collection factor.
   const blendFactor      = payorBlendFactor();
   const panelRevenue     = N * $('rev_test') * blendFactor;
-  const gcRevenue        = effTotalPositives * $('rev_gc') * blendFactor;
+  const gcRevenue        = effTotalPositives * gcUptake * $('rev_gc') * blendFactor;
   const lynchMgmtRevenue = effLynchN * $('rev_lynch_mgmt') * pvF * blendFactor;
   const fhMgmtRevenue    = effFhN * fhCompliance * $('rev_fh_mgmt') * pvF * blendFactor;
   const hbocMgmtRevenue  = effHbocN * hbocUptake * $('rev_hboc_mgmt') * pvF * blendFactor;
@@ -1319,7 +1333,7 @@ function renderResults(d) {
         ${colHeader('Cost', 'Revenue')}
         ${costRow(`Panel testing<br><span class="text-slate-400">${fmt(N_screened)} pts × ${fmtM($('cost_screen'))}</span>`,
             '+' + fmtM(d.panelTestCost), '+' + fmtM(d.panelRevenue))}
-        ${costRow(`Genetic counseling<br><span class="text-slate-400">${fmtD(d.effTotalPositives)} enrolled × rates</span>`,
+        ${costRow(`Genetic counseling<br><span class="text-slate-400">${fmtD(d.effTotalPositives * pct('gc_uptake'))} completed (${$('gc_uptake')}% uptake)</span>`,
             '+' + fmtM(d.gcCost), '+' + fmtM(d.gcRevenue))}
         ${subtotalRow('+' + fmtM(d.baseProgramCost), '+' + fmtM(d.totalScreenRevenue))}
       </div>
