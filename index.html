@@ -209,21 +209,27 @@ Does not affect management uptake (set separately per condition).</span>
                 <th class="py-1 px-2 border border-emerald-200 text-left font-semibold">Intervention</th>
                 <th class="py-1 px-2 border border-emerald-200 font-semibold">Cost</th>
                 <th class="py-1 px-2 border border-emerald-200 font-semibold">Uptake</th>
+                <th class="py-1 px-2 border border-emerald-200 font-semibold tooltip-wrap">Freq
+                  <span class="tip" style="width:180px">Interval between procedures (years). Annual cost = cost ÷ frequency. Only applies to colonoscopy.</span>
+                </th>
                 <th class="py-1 px-2 border border-emerald-200 text-left font-semibold text-emerald-600">Type</th>
               </tr>
             </thead>
             <tbody>
               <tr class="bg-white">
                 <td class="py-1.5 px-2 border border-emerald-200 font-medium text-slate-700 tooltip-wrap">Colonoscopy
-                  <span class="tip" style="width:220px">Annual equivalent cost of colonoscopy surveillance (recommended every 1–2 years). Applies to all Lynch carriers. Default ~$1,400/yr reflects biennial procedure at ~$2,500.</span>
+                  <span class="tip" style="width:220px">Cost per procedure. Annual equivalent = cost ÷ frequency. Applies to all Lynch carriers. NCCN recommends every 1–2 years.</span>
                 </td>
                 <td class="py-1 px-1.5 border border-emerald-200">
-                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_lnch_colo" class="input-field pl-5 text-right" value="1400" min="0" /></div>
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_lnch_colo" class="input-field pl-5 text-right" value="2500" min="0" /></div>
                 </td>
                 <td class="py-1 px-1.5 border border-emerald-200">
                   <div class="relative"><input type="number" id="lnch_colo_uptake" class="input-field text-center" value="80" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
                 </td>
-                <td class="py-1.5 px-2 border border-emerald-200 text-emerald-600 text-xs">Annual</td>
+                <td class="py-1 px-1.5 border border-emerald-200">
+                  <div class="relative"><input type="number" id="lnch_colo_freq" class="input-field text-center" value="2" min="1" max="5" step="1" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">yr</span></div>
+                </td>
+                <td class="py-1.5 px-2 border border-emerald-200 text-emerald-600 text-xs">Recurring</td>
               </tr>
               <tr class="bg-emerald-50">
                 <td class="py-1.5 px-2 border border-emerald-200 font-medium text-slate-700 tooltip-wrap">Gynecologic surveillance <span class="text-pink-500">♀</span>
@@ -235,6 +241,7 @@ Does not affect management uptake (set separately per condition).</span>
                 <td class="py-1 px-1.5 border border-emerald-200">
                   <div class="relative"><input type="number" id="lnch_gyn_uptake" class="input-field text-center" value="70" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
                 </td>
+                <td class="py-1.5 px-2 border border-emerald-200 text-center text-slate-300">—</td>
                 <td class="py-1.5 px-2 border border-emerald-200 text-emerald-600 text-xs">Annual</td>
               </tr>
               <tr class="bg-white">
@@ -247,6 +254,7 @@ Does not affect management uptake (set separately per condition).</span>
                 <td class="py-1 px-1.5 border border-emerald-200">
                   <div class="relative"><input type="number" id="lnch_hyst_uptake" class="input-field text-center" value="30" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
                 </td>
+                <td class="py-1.5 px-2 border border-emerald-200 text-center text-slate-300">—</td>
                 <td class="py-1.5 px-2 border border-emerald-200 text-amber-600 text-xs">One-time</td>
               </tr>
             </tbody>
@@ -1163,7 +1171,8 @@ function calculateCore() {
   const lynchScreenCost    = effLynchN * gcUptake * costGC;
   // Surveillance costs recur annually (pvF annuity); surgical cost is one-time (no pvF)
   // Gynecologic surveillance and hysterectomy apply to female Lynch carriers only
-  const lynchColoCost      = effLynchN * pct('lnch_colo_uptake') * $('cost_lnch_colo') * pvF;
+  const coloFreqYrs        = Math.max($('lnch_colo_freq'), 0.5);  // prevent div-by-zero
+  const lynchColoCost      = effLynchN * pct('lnch_colo_uptake') * ($('cost_lnch_colo') / coloFreqYrs) * pvF;
   const lynchGynCost       = effLynchN * femalePct * pct('lnch_gyn_uptake') * $('cost_lnch_gyn') * pvF;
   const lynchHystCost      = effLynchN * femalePct * pct('lnch_hyst_uptake') * $('cost_lnch_hyst');
   const lynchMgmtCost      = lynchColoCost + lynchGynCost + lynchHystCost;
