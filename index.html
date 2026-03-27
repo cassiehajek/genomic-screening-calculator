@@ -1066,6 +1066,19 @@ function weightedEventPvF() {
   return AGE_REMAINING_YRS.reduce((sum, yrs, i) => sum + w[i] * pvFactorForYrs(yrs), 0);
 }
 
+// Age-weighted PV factor for COSTS: caps each age group at the lesser of their
+// remaining risk years or the programme time horizon. This ensures 76+ carriers
+// accrue near-zero surveillance costs (matching their near-zero event contribution)
+// and 61–75 carriers are only charged ~10 years of surveillance, not 30+.
+function weightedCostPvF() {
+  if (_overrideEventPvF !== null) return _overrideEventPvF;
+  const useBlended = document.getElementById('use_blended_horizon')?.checked;
+  const T = useBlended ? blendedTimeHorizon() : $('time_horizon');
+  const w = ageWeights();
+  return AGE_REMAINING_YRS.reduce((sum, yrs, i) =>
+    sum + w[i] * pvFactorForYrs(Math.min(yrs, T)), 0);
+}
+
 // Compute ICER for a hypothetical cohort screened entirely at a specific age.
 // Uses exact remaining-risk years for that age rather than bucket midpoints.
 function computeIcerAtAge(age) {
@@ -1121,8 +1134,10 @@ function calculateCore() {
   const N = $('n_screened');
   const femalePct = pct('pct_female');
   const malePct = 1 - femalePct;
-  const pvF  = pvFactor();         // for cost calculations (uses time_horizon input)
-  const ePvF = weightedEventPvF(); // for events calculations (age-stratified, uses remaining risk yrs)
+  const costPvF = weightedCostPvF(); // age-stratified cost annuity (capped at remaining risk yrs per age group)
+  const ePvF    = weightedEventPvF(); // for events calculations (age-stratified, uses remaining risk yrs)
+  // Fraction of cohort eligible for one-time prophylactic surgery (excludes 76+)
+  const surgEligFrac = 1 - ageWeights()[4];
 
   // Shared costs
   const costScreen = $('cost_screen');
@@ -1209,9 +1224,9 @@ function calculateCore() {
   // Surveillance costs recur annually (pvF annuity); surgical cost is one-time (no pvF)
   // Gynecologic surveillance and hysterectomy apply to female Lynch carriers only
   const coloFreqYrs        = Math.max($('lnch_colo_freq'), 0.5);  // prevent div-by-zero
-  const lynchColoCost      = effLynchN * pct('lnch_colo_uptake') * ($('cost_lnch_colo') / coloFreqYrs) * pvF;
-  const lynchGynCost       = effLynchN * femalePct * pct('lnch_gyn_uptake') * $('cost_lnch_gyn') * pvF;
-  const lynchHystCost      = effLynchN * femalePct * pct('lnch_hyst_uptake') * $('cost_lnch_hyst');
+  const lynchColoCost      = effLynchN * pct('lnch_colo_uptake') * ($('cost_lnch_colo') / coloFreqYrs) * costPvF;
+  const lynchGynCost       = effLynchN * femalePct * pct('lnch_gyn_uptake') * $('cost_lnch_gyn') * costPvF;
+  const lynchHystCost      = effLynchN * femalePct * pct('lnch_hyst_uptake') * $('cost_lnch_hyst') * surgEligFrac;
   const lynchMgmtCost      = lynchColoCost + lynchGynCost + lynchHystCost;
   const lynchAvertedCrc  = lynchCrcPrev * $('cost_crc');
   const lynchAvertedEndo = lynchEndoPrev * $('cost_endo');
@@ -1242,7 +1257,7 @@ function calculateCore() {
   const fhPcsk9iPremium = $('fh_pcsk9i_pct') / 100 * $('fh_pcsk9i_cost');
   const fhAnnualTxCost  = $('cost_fh_mgmt') + fhPcsk9iPremium;
   const fhScreenCost  = effFhN * gcUptake * costGC;
-  const fhMgmtCost    = effFhN * fhCompliance * fhAnnualTxCost * pvF;
+  const fhMgmtCost    = effFhN * fhCompliance * fhAnnualTxCost * costPvF;
   const fhAvertedCost = fhMacePrev * $('cost_cad');
   const fhNetCost     = fhMgmtCost + fhScreenCost - fhAvertedCost;
   const fhICER = fhQalys > 0 ? fhNetCost / fhQalys : Infinity;
@@ -1294,10 +1309,10 @@ function calculateCore() {
 
   const hbocScreenCost  = effHbocN * gcUptake * costGC;
   // Surveillance costs recur annually (pvF annuity); surgical costs are one-time (no pvF)
-  const hbocMriCost     = effHbocN * pct('hboc_mri_uptake')   * $('cost_hboc_mri')   * pvF;
-  const hbocMammoCost   = effHbocN * pct('hboc_mammo_uptake')  * $('cost_hboc_mammo') * pvF;
-  const hbocMastCost    = effHbocN * pct('hboc_mast_uptake')   * $('cost_hboc_mast');
-  const hbocRrsoCost    = effHbocN * pct('hboc_rrso_uptake')   * $('cost_hboc_rrso');
+  const hbocMriCost     = effHbocN * pct('hboc_mri_uptake')   * $('cost_hboc_mri')   * costPvF;
+  const hbocMammoCost   = effHbocN * pct('hboc_mammo_uptake')  * $('cost_hboc_mammo') * costPvF;
+  const hbocMastCost    = effHbocN * pct('hboc_mast_uptake')   * $('cost_hboc_mast')  * surgEligFrac;
+  const hbocRrsoCost    = effHbocN * pct('hboc_rrso_uptake')   * $('cost_hboc_rrso')  * surgEligFrac;
   const hbocMgmtCost    = hbocMriCost + hbocMammoCost + hbocMastCost + hbocRrsoCost;
   const hbocAvertedBreast  = hbocBreastPrev  * $('cost_breast');
   const hbocAvertedOvarian = hbocOvarianPrev * $('cost_ovarian');
@@ -1324,9 +1339,9 @@ function calculateCore() {
   const blendFactor      = payorBlendFactor();
   const panelRevenue     = N * $('rev_test') * blendFactor;
   const gcRevenue        = effTotalPositives * gcUptake * $('rev_gc') * blendFactor;
-  const lynchMgmtRevenue = effLynchN * $('rev_lynch_mgmt') * pvF * blendFactor;
-  const fhMgmtRevenue    = effFhN * fhCompliance * $('rev_fh_mgmt') * pvF * blendFactor;
-  const hbocMgmtRevenue  = effHbocN * hbocUptake * $('rev_hboc_mgmt') * pvF * blendFactor;
+  const lynchMgmtRevenue = effLynchN * $('rev_lynch_mgmt') * costPvF * blendFactor;
+  const fhMgmtRevenue    = effFhN * fhCompliance * $('rev_fh_mgmt') * costPvF * blendFactor;
+  const hbocMgmtRevenue  = effHbocN * hbocUptake * $('rev_hboc_mgmt') * costPvF * blendFactor;
   const totalScreenRevenue = panelRevenue + gcRevenue;
   const totalMgmtRevenue   = lynchMgmtRevenue + fhMgmtRevenue + hbocMgmtRevenue;
   const totalRevenue       = totalScreenRevenue + totalMgmtRevenue;
