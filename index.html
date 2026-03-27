@@ -924,6 +924,19 @@ function buildQalyTable() {
 }
 buildQalyTable();
 
+// ─── HELPERS ──────────────────────────────────────────────────────
+const $ = id => parseFloat(document.getElementById(id).value) || 0;
+const fmt = n => n.toLocaleString('en-US', {maximumFractionDigits:0});
+const fmtD = n => n.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
+const fmtM = n => {
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return sign + '$' + fmtD(abs/1e9) + 'B';
+  if (abs >= 1e6) return sign + '$' + fmtD(abs/1e6) + 'M';
+  return sign + '$' + fmt(abs);
+};
+const pct = id => $(id) / 100;
+
 // ─── AGE SUM WATCHER ──────────────────────────────────────────────
 const AGE_IDS = ['age_18','age_31','age_46','age_61','age_76'];
 function updateAgeSum() {
@@ -998,19 +1011,6 @@ function updatePalb2Visibility() {
 }
 document.getElementById('include_palb2').addEventListener('change', updatePalb2Visibility);
 updatePalb2Visibility();
-
-// ─── HELPERS ──────────────────────────────────────────────────────
-const $ = id => parseFloat(document.getElementById(id).value) || 0;
-const fmt = n => n.toLocaleString('en-US', {maximumFractionDigits:0});
-const fmtD = n => n.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
-const fmtM = n => {
-  const sign = n < 0 ? '-' : '';
-  const abs = Math.abs(n);
-  if (abs >= 1e9) return sign + '$' + fmtD(abs/1e9) + 'B';
-  if (abs >= 1e6) return sign + '$' + fmtD(abs/1e6) + 'M';
-  return sign + '$' + fmt(abs);
-};
-const pct = id => $(id) / 100;
 
 // Age group weights (normalized)
 function ageWeights() {
@@ -1106,10 +1106,15 @@ function calculateWithOverride(overrides) {
 }
 
 function calculate() {
-  const d = calculateCore();
-  renderResults(d);
-  runSensitivityAnalysis(d.icer);
-  document.getElementById('sa_section').classList.remove('hidden');
+  try {
+    const d = calculateCore();
+    renderResults(d);
+    runSensitivityAnalysis(d.icer);
+    document.getElementById('sa_section').classList.remove('hidden');
+  } catch(e) {
+    console.error('Calculate error:', e);
+    alert('Calculation error: ' + e.message + '\n\nSee browser console for details.');
+  }
 }
 
 function calculateCore() {
