@@ -72,6 +72,10 @@
       class="px-5 py-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors">
       Assumptions &amp; References
     </button>
+    <button onclick="showTab('steps')" id="tab-btn-steps"
+      class="px-5 py-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors">
+      Calculation Steps
+    </button>
   </div>
 </nav>
 
@@ -776,7 +780,7 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
         <div class="text-xs text-slate-400 mt-0.5" id="kpi_events_sub"></div>
       </div>
       <div class="result-kpi">
-        <div class="text-3xl font-black text-blue-700" id="kpi_cost">—</div>
+        <div class="text-3xl font-black" id="kpi_cost">—</div>
         <div class="text-xs text-slate-500 mt-1 font-medium">Net Program Cost</div>
         <div class="text-xs text-slate-400 mt-0.5" id="kpi_cost_sub"></div>
       </div>
@@ -1205,6 +1209,15 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
 
 </div>
 
+<!-- ─── CALCULATION STEPS TAB ───────────────────────────────────── -->
+<div id="tab-steps" class="hidden max-w-7xl mx-auto px-4 sm:px-8 py-8">
+  <div id="steps-container">
+    <div class="text-center py-20 text-slate-400 text-sm">
+      Run the calculator first to see the step-by-step calculation.
+    </div>
+  </div>
+</div>
+
 <script>
 // ─── DEFAULT QALY TABLES ───────────────────────────────────────────
 // QALYs gained per event prevented, by age group [18-30, 31-45, 46-60, 61-75, 76+]
@@ -1453,6 +1466,7 @@ function calculate() {
   try {
     const d = calculateCore();
     renderResults(d);
+    renderSteps(d);
     runSensitivityAnalysis(d.icer);
     document.getElementById('sa_section').classList.remove('hidden');
   } catch(e) {
@@ -1701,11 +1715,17 @@ function calculateCore() {
   return {
     genes, lynchN, fhN, hbocN, palb2N, totalPositives,
     effLynchN, effFhN, effHbocN, effTotalPositives,
+    effLynchNForCost, effFhNForCost, effHbocNForCost,
+    ePvF, costPvF,
     lynchCrcPrev, lynchEndoPrev, lynchTotalEvents, lynchQalys,
+    qalyPerCrc, qalyPerEndo, qalyPerMace, qalyPerBreast, qalyPerOvarian,
+    lynchColoCost, lynchGynCost, lynchHystCost,
     lynchNetCost: lynchMgmtCost + lynchScreenCost, lynchAvertedCost, lynchICER,
-    fhMacePrev, fhQalys, fhNetCost: fhMgmtCost + fhScreenCost, fhAvertedCost, fhICER,
+    fhMacePrev, fhQalys, fhAnnualTxCost,
+    fhNetCost: fhMgmtCost + fhScreenCost, fhAvertedCost, fhICER,
     hbocBreastPrev, hbocOvarianPrev,
     hbocTotalEvents: hbocBreastPrev + hbocOvarianPrev,
+    hbocMriCost, hbocMammoCost, hbocMastCost, hbocRrsoCost,
     hbocQalys, hbocNetCost: hbocMgmtCost + hbocScreenCost, hbocAvertedCost, hbocICER,
     totalQalys, totalEvents, netCost, icer,
     baseProgramCost, panelTestCost, gcCost, totalMgmtCost, totalAvertedCost,
@@ -1740,7 +1760,9 @@ function renderResults(d) {
   document.getElementById('kpi_qaly_sub').textContent = `${fmtD(d.totalQalys / Math.max(d.effTotalPositives,1))} per enrolled positive`;
   document.getElementById('kpi_events').textContent  = fmtD(d.totalEvents);
   document.getElementById('kpi_events_sub').textContent = `across all conditions`;
-  document.getElementById('kpi_cost').textContent    = fmtM(d.netCost);
+  const costEl = document.getElementById('kpi_cost');
+  costEl.textContent = fmtM(d.netCost);
+  costEl.className = `text-3xl font-black ${d.netCost < 0 ? 'text-green-600' : 'text-red-600'}`;
   document.getElementById('kpi_cost_sub').textContent= d.netCost < 0 ? 'Net cost savings' : 'Net incremental cost';
 
   const iDiv  = document.getElementById('kpi_icer');
@@ -2287,13 +2309,177 @@ document.addEventListener('DOMContentLoaded', () => { /* auto-run optional */ })
 
 // ─── TAB SWITCHING ────────────────────────────────────────────────
 function showTab(name) {
-  const isCalc = name === 'calc';
-  document.getElementById('tab-calc').classList.toggle('hidden', !isCalc);
-  document.getElementById('tab-assumptions').classList.toggle('hidden', isCalc);
-  const activeClass = 'px-5 py-3 text-sm font-medium border-b-2 border-indigo-600 text-indigo-700 transition-colors';
+  const tabs = ['calc', 'assumptions', 'steps'];
+  const activeClass   = 'px-5 py-3 text-sm font-medium border-b-2 border-indigo-600 text-indigo-700 transition-colors';
   const inactiveClass = 'px-5 py-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors';
-  document.getElementById('tab-btn-calc').className = isCalc ? activeClass : inactiveClass;
-  document.getElementById('tab-btn-assumptions').className = isCalc ? inactiveClass : activeClass;
+  tabs.forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('hidden', t !== name);
+    document.getElementById('tab-btn-' + t).className = t === name ? activeClass : inactiveClass;
+  });
+}
+
+// ─── CALCULATION STEPS RENDERER ───────────────────────────────────
+function renderSteps(d) {
+  const N = $('n_screened');
+  const f2 = n => n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const f1 = n => n.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
+  const fi = n => Math.round(n).toLocaleString('en-US');
+  const fm = n => fmtM(n);
+
+  function step(num, title, color, body) {
+    return `<div class="section-card">
+      <div class="flex items-center gap-3 mb-4 pb-3 border-b-2 ${color.border}">
+        <span class="flex-shrink-0 w-7 h-7 rounded-full ${color.badge} flex items-center justify-center text-xs font-bold">${num}</span>
+        <span class="text-sm font-bold text-slate-800">${title}</span>
+      </div>
+      ${body}
+    </div>`;
+  }
+
+  function row(label, val, sub) {
+    return `<tr class="border-b border-slate-100 last:border-0">
+      <td class="py-2 pr-4 text-xs text-slate-600">${label}</td>
+      <td class="py-2 text-xs font-semibold text-right text-slate-800">${val}</td>
+      ${sub ? `<td class="py-2 pl-3 text-xs text-slate-400">${sub}</td>` : '<td></td>'}
+    </tr>`;
+  }
+
+  function formula(txt) {
+    return `<div class="bg-slate-50 rounded-lg px-4 py-2.5 font-mono text-xs text-slate-700 mb-4 whitespace-pre-wrap">${txt}</div>`;
+  }
+
+  function tbl(headers, rows, colCls) {
+    const hdr = headers.map(h => `<th class="text-right py-1.5 px-2 text-xs font-semibold text-slate-500 first:text-left">${h}</th>`).join('');
+    const bdy = rows.map(cells =>
+      `<tr class="border-b border-slate-100 last:border-0">${cells.map((c,i) =>
+        `<td class="${colCls?.[i]||'text-right'} py-1.5 px-2 text-xs text-slate-700">${c}</td>`).join('')}</tr>`
+    ).join('');
+    return `<table class="w-full"><thead><tr class="border-b border-slate-200">${hdr}</tr></thead><tbody>${bdy}</tbody></table>`;
+  }
+
+  // ── STEP 1: CARRIERS ──────────────────────────────────────────────
+  const lnchCas = ($('lnch_cascade')||0).toFixed(0);
+  const fhCas   = ($('fh_cascade')  ||0).toFixed(0);
+  const hbocCas = ($('hboc_cascade')||0).toFixed(0);
+  const s1 = step(1, 'Carrier Identification', {border:'border-indigo-200', badge:'bg-indigo-100 text-indigo-700'},
+    formula(`effN = directN × (1 + cascade_yield / 100)
+forCost = effN × (1 − prior_identification)`) +
+    tbl(['Condition','Direct','Cascade','Effective (effN)','For Cost'], [
+      ['Lynch Syndrome', fi(d.lynchN), lnchCas+'%', fi(d.effLynchN), fi(d.effLynchNForCost)],
+      ['FH',            fi(d.fhN),    fhCas+'%',   fi(d.effFhN),    fi(d.effFhNForCost)],
+      ['HBOC',          fi(d.hbocN),  hbocCas+'%', fi(d.effHbocN),  fi(d.effHbocNForCost)],
+    ], ['text-left','text-right','text-right','text-right font-semibold','text-right font-semibold'])
+  );
+
+  // ── STEP 2: PV FACTORS ────────────────────────────────────────────
+  const s2 = step(2, 'Present-Value Factors', {border:'border-slate-200', badge:'bg-slate-100 text-slate-700'},
+    formula(`pvFactor(yrs, r) = (1 − (1+r)^−yrs) / r
+
+ePvF    = Σ age_weight × pvFactor(remaining_yrs_to_80, r)   ← event horizon
+costPvF = Σ age_weight × pvFactor(min(remaining_yrs, horizon), r)  ← cost horizon
+
+Age groups: 18–30 (56 yrs), 31–45 (42 yrs), 46–60 (27 yrs), 61–75 (12 yrs), 76+ (0 yrs)`) +
+    tbl(['Factor','Value','Use'], [
+      ['ePvF (event PV)',  f2(d.ePvF),    'Discounts future events — applied to events prevented'],
+      ['costPvF (cost PV)',f2(d.costPvF), 'Annuitises annual management costs over programme horizon'],
+    ], ['text-left','text-right font-semibold text-indigo-700','text-left text-slate-400'])
+  );
+
+  // ── STEP 3: EVENTS PREVENTED ──────────────────────────────────────
+  const s3 = step(3, 'Events Prevented', {border:'border-emerald-200', badge:'bg-emerald-100 text-emerald-700'},
+    formula(`events = effCarriers × (lifetime_risk / accrual_yrs) × efficacy × compliance × ePvF × (1 − prior_ID)`) +
+    tbl(['Event Type','Carriers','Annual Rate','× ePvF','Events Prevented'], [
+      ['Lynch CRC',      fi(d.effLynchN), '÷50 yrs', f2(d.ePvF), f1(d.lynchCrcPrev)],
+      ['Lynch Endometrial (♀)', fi(Math.round(d.effLynchN * pct('pct_female'))), '÷50 yrs', f2(d.ePvF), f1(d.lynchEndoPrev)],
+      ['FH MACE',        fi(d.effFhN),   '÷60 yrs', f2(d.ePvF), f1(d.fhMacePrev)],
+      ['HBOC Breast (♀)',fi(Math.round(d.effHbocN * pct('pct_female'))), '÷60 yrs', f2(d.ePvF), f1(d.hbocBreastPrev)],
+      ['HBOC Ovarian (♀)',fi(Math.round(d.effHbocN * pct('pct_female'))), '÷135 yrs', f2(d.ePvF), f1(d.hbocOvarianPrev)],
+    ], ['text-left','text-right','text-right','text-right','text-right font-semibold']) +
+    `<div class="mt-2 text-right text-xs font-bold text-slate-700">Total: ${f1(d.totalEvents)} events prevented</div>`
+  );
+
+  // ── STEP 4: QALYS ─────────────────────────────────────────────────
+  const s4 = step(4, 'QALYs Gained', {border:'border-blue-200', badge:'bg-blue-100 text-blue-700'},
+    formula(`QALYs = events_prevented × qalyPerEvent
+qalyPerEvent = age-weighted QALY value from editable table (undiscounted life-years per prevented event)`) +
+    tbl(['Event Type','Events Prevented','QALY / Event (weighted)','QALYs Gained'], [
+      ['Lynch CRC',          f1(d.lynchCrcPrev),  f2(d.qalyPerCrc),    f1(d.lynchCrcPrev  * d.qalyPerCrc)],
+      ['Lynch Endometrial',  f1(d.lynchEndoPrev), f2(d.qalyPerEndo),   f1(d.lynchEndoPrev * d.qalyPerEndo)],
+      ['FH MACE',            f1(d.fhMacePrev),    f2(d.qalyPerMace),   f1(d.fhMacePrev    * d.qalyPerMace)],
+      ['HBOC Breast',        f1(d.hbocBreastPrev),f2(d.qalyPerBreast), f1(d.hbocBreastPrev * d.qalyPerBreast)],
+      ['HBOC Ovarian',       f1(d.hbocOvarianPrev),f2(d.qalyPerOvarian),f1(d.hbocOvarianPrev * d.qalyPerOvarian)],
+    ], ['text-left','text-right','text-right','text-right font-semibold']) +
+    `<div class="mt-2 text-right text-xs font-bold text-slate-700">Total QALYs: ${f1(d.totalQalys)}</div>`
+  );
+
+  // ── STEP 5: PROGRAM COSTS ─────────────────────────────────────────
+  const s5 = step(5, 'Program Costs', {border:'border-red-200', badge:'bg-red-100 text-red-700'},
+    formula(`Annual costs × costPvF annuity = discounted lifetime cost
+One-time surgical costs are NOT multiplied by costPvF`) +
+    `<div class="space-y-3">
+      <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Screening</div>
+      <table class="w-full mb-2">` +
+      row(`Panel testing — ${fi(N)} pts × ${fm($('cost_screen'))}`, fm(d.panelTestCost)) +
+      row(`Genetic counselling — ${fi(Math.round((d.effLynchNForCost+d.effFhNForCost+d.effHbocNForCost)*pct('gc_uptake')))} completed`, fm(d.gcCost)) +
+      `</table>
+      <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-2">Lynch Surveillance (annual × costPvF=${f2(d.costPvF)})</div>
+      <table class="w-full mb-2">` +
+      row('Colonoscopy (incremental above usual care)', fm(d.lynchColoCost)) +
+      row('Gynaecologic surveillance (♀ only)', fm(d.lynchGynCost)) +
+      row('Hysterectomy — one-time (no annuity)', fm(d.lynchHystCost)) +
+      `</table>
+      <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-2">FH Treatment (annual × costPvF=${f2(d.costPvF)})</div>
+      <div class="text-xs text-slate-400 mb-1">Annual cost/carrier = $${Math.round($('cost_fh_mgmt'))} statin + ${$('fh_pcsk9i_pct')}% × $${fi($('fh_pcsk9i_cost'))} PCSK9i = ${fm(d.fhAnnualTxCost)}/yr</div>
+      <table class="w-full mb-2">` +
+      row(`${fi(d.effFhNForCost)} carriers × ${(pct('fh_compliance')*100).toFixed(0)}% compliance × ${fm(d.fhAnnualTxCost)}/yr × ${f2(d.costPvF)}`, fm(d.fhMgmtCostOnly)) +
+      `</table>
+      <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-2">HBOC Management</div>
+      <div class="text-xs text-slate-400 mb-1">${(pct('hboc_prophyl_pct')*100).toFixed(0)}% prophylaxis path (one-time surgery) · ${(100-pct('hboc_prophyl_pct')*100).toFixed(0)}% surveillance path (annual imaging × costPvF)</div>
+      <table class="w-full mb-2">` +
+      row(`MRI surveillance (annual × costPvF)`, fm(d.hbocMriCost)) +
+      row(`Mammography incremental (annual × costPvF)`, fm(d.hbocMammoCost)) +
+      row(`Mastectomy — one-time`, fm(d.hbocMastCost)) +
+      row(`RRSO — one-time`, fm(d.hbocRrsoCost)) +
+      `</table>
+      <div class="flex justify-between items-center border-t-2 border-slate-300 pt-2 mt-2">
+        <span class="text-xs font-bold text-slate-700">Total Gross Program Cost</span>
+        <span class="text-sm font-black text-slate-800">${fm(d.baseProgramCost + d.totalMgmtCost)}</span>
+      </div>
+    </div>`
+  );
+
+  // ── STEP 6: COSTS AVERTED ─────────────────────────────────────────
+  const s6 = step(6, 'Treatment Costs Averted', {border:'border-green-200', badge:'bg-green-100 text-green-700'},
+    formula(`averted_cost = events_prevented × avg_treatment_cost_per_event`) +
+    tbl(['Event Type','Events Prevented','Cost / Event','Costs Averted'], [
+      ['Lynch CRC',        f1(d.lynchCrcPrev),    fm($('cost_crc')),     fm(d.lynchAvertedCrc)],
+      ['Lynch Endometrial',f1(d.lynchEndoPrev),   fm($('cost_endo')),    fm(d.lynchAvertedEndo)],
+      ['FH MACE',          f1(d.fhMacePrev),      fm($('cost_cad')),     fm(d.fhAvertedCost)],
+      ['HBOC Breast',      f1(d.hbocBreastPrev),  fm($('cost_breast')),  fm(d.hbocAvertedBreast)],
+      ['HBOC Ovarian',     f1(d.hbocOvarianPrev), fm($('cost_ovarian')), fm(d.hbocAvertedOvarian)],
+    ], ['text-left','text-right','text-right','text-right font-semibold text-green-700']) +
+    `<div class="mt-2 text-right text-xs font-bold text-green-700">Total Averted: ${fm(d.totalAvertedCost)}</div>`
+  );
+
+  // ── STEP 7: NET COST & ICER ───────────────────────────────────────
+  const icerColor = d.icer < 100000 ? 'text-blue-700' : d.icer < 150000 ? 'text-yellow-700' : 'text-red-700';
+  const s7 = step(7, 'Net Program Cost &amp; ICER', {border:'border-indigo-200', badge:'bg-indigo-100 text-indigo-700'},
+    formula(`net_program_cost = panel_testing + GC + management_costs − averted_costs
+ICER = net_program_cost / total_QALYs_gained`) +
+    `<div class="space-y-2">` +
+    `<div class="flex justify-between py-1.5 border-b border-slate-100 text-xs"><span class="text-slate-600">Panel testing + GC</span><span class="font-semibold">${fm(d.baseProgramCost)}</span></div>` +
+    `<div class="flex justify-between py-1.5 border-b border-slate-100 text-xs"><span class="text-slate-600">Lynch management</span><span class="font-semibold">${fm(d.lynchMgmtCostOnly)}</span></div>` +
+    `<div class="flex justify-between py-1.5 border-b border-slate-100 text-xs"><span class="text-slate-600">FH management</span><span class="font-semibold">${fm(d.fhMgmtCostOnly)}</span></div>` +
+    `<div class="flex justify-between py-1.5 border-b border-slate-100 text-xs"><span class="text-slate-600">HBOC management</span><span class="font-semibold">${fm(d.hbocMgmtCostOnly)}</span></div>` +
+    `<div class="flex justify-between py-1.5 border-b border-slate-100 text-xs text-green-700"><span>Costs averted</span><span class="font-semibold">− ${fm(d.totalAvertedCost)}</span></div>` +
+    `<div class="flex justify-between py-2 border-b-2 border-slate-300 text-sm font-bold text-slate-800"><span>Net Program Cost</span><span>${fm(d.netCost)}</span></div>` +
+    `<div class="flex justify-between py-1.5 text-xs"><span class="text-slate-600">Total QALYs gained</span><span class="font-semibold">${f1(d.totalQalys)}</span></div>` +
+    `<div class="flex justify-between py-2 text-base font-black"><span class="text-slate-800">ICER</span><span class="${icerColor}">${fm(d.icer)} / QALY</span></div>` +
+    `</div>`
+  );
+
+  document.getElementById('steps-container').innerHTML =
+    `<div class="space-y-5">${s1}${s2}${s3}${s4}${s5}${s6}${s7}</div>`;
 }
 </script>
 </body>
