@@ -281,9 +281,11 @@ Does not affect management uptake (set separately per condition).</span>
             </thead>
             <tbody>
               <tr class="bg-white">
-                <td class="py-1.5 px-2 border border-purple-200 font-medium text-slate-700">Breast MRI</td>
+                <td class="py-1.5 px-2 border border-purple-200 font-medium text-slate-700 tooltip-wrap">Breast MRI
+                  <span class="tip" style="width:230px">Annual breast MRI cost. Default reflects Medicare fee schedule (CPT 77049; Guzauskas 2020, Guo 2024 JAMA Netw Open: ~$1,000/yr).</span>
+                </td>
                 <td class="py-1 px-1.5 border border-purple-200">
-                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mri" class="input-field pl-5 text-right" value="1200" min="0" /></div>
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mri" class="input-field pl-5 text-right" value="1000" min="0" /></div>
                 </td>
                 <td class="py-1 px-1.5 border border-purple-200">
                   <div class="relative"><input type="number" id="hboc_mri_uptake" class="input-field text-center" value="65" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
