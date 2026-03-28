@@ -1269,21 +1269,28 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
     </div>
   </div>
 
-  <!-- Phased Enrollment (placeholder) -->
+  <!-- Phased Enrollment Cash Flow -->
   <div class="section-card">
     <div class="section-title">
-      <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
       Phased Enrollment Cash Flow
-      <span class="ml-2 text-xs font-normal text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Coming soon</span>
     </div>
-    <p class="text-sm text-slate-600 mb-3">Model scenarios where patients enroll in the programme over a multi-year period (e.g., 100,000 patients enrolled across 4 years). This section will generate a year-by-year cash flow projection showing:</p>
-    <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside ml-2">
-      <li>Annual screening volume and upfront test costs</li>
-      <li>Cumulative carrier enrollment into management programmes</li>
-      <li>Year-by-year revenue from testing, GC, and ongoing management</li>
-      <li>Net annual and cumulative financial position</li>
-      <li>Break-even year for programme investment</li>
-    </ul>
+    <p class="text-sm text-slate-600 mb-4">Model scenarios where patients enroll over a multi-year period. Revenue builds progressively as more carriers enter management programmes; costs are front-loaded during enrollment. Cash flows are nominal (undiscounted) for operational planning clarity.</p>
+
+    <div class="flex flex-wrap items-end gap-4 mb-5 p-3 bg-slate-50 rounded-lg border border-slate-200">
+      <div>
+        <div class="label-sm">Enrollment period (years)</div>
+        <input type="number" id="enroll_years" class="input-field w-24" value="4" min="1" max="20" step="1" />
+      </div>
+      <p class="text-xs text-slate-500 max-w-xs">Total patients from the Calculator tab, enrolled uniformly each year. Management costs and revenues continue for the full time horizon after enrollment ends.</p>
+      <button onclick="computePhasedCashFlow()" class="ml-auto px-6 py-2 rounded-lg font-semibold text-white text-sm bg-indigo-600 hover:bg-indigo-700 transition-colors">Generate Cash Flow</button>
+    </div>
+
+    <div id="phased_cashflow_output">
+      <div class="text-center py-8 text-slate-400 text-sm">
+        Run the calculator or click "Generate Cash Flow" to see projections.
+      </div>
+    </div>
   </div>
 
 </div>
@@ -1537,6 +1544,7 @@ function calculate() {
     const d = calculateCore();
     renderResults(d);
     renderSteps(d);
+    computePhasedCashFlow(d);
     runSensitivityAnalysis(d.icer);
     document.getElementById('sa_section').classList.remove('hidden');
   } catch(e) {
@@ -2376,6 +2384,175 @@ document.querySelectorAll('details.section-card').forEach(det => {
 
 // Run on load with defaults
 document.addEventListener('DOMContentLoaded', () => { /* auto-run optional */ });
+
+// ─── PHASED ENROLLMENT CASH FLOW ──────────────────────────────────
+function computePhasedCashFlow(d) {
+  // Accept pre-computed d or re-run calculateCore
+  try { d = d || calculateCore(); } catch(e) { return; }
+  const N = $('n_screened');
+  if (N <= 0) return;
+
+  const enrollYears  = Math.max(1, Math.min(20, Math.round($('enroll_years') || 4)));
+  const timeHorizon  = Math.max(enrollYears, Math.round($('time_horizon')));
+  const blendFactor  = d.blendFactor;
+  const cohortsPerYear = N / enrollYears;
+
+  // Per-patient carrier rates
+  const lynchCostRate = d.effLynchNForCost / N;  // cost carriers (excl. prior-identified)
+  const fhCostRate    = d.effFhNForCost    / N;
+  const hbocCostRate  = d.effHbocNForCost  / N;
+  const lynchRevRate  = d.effLynchN / N;           // revenue carriers (all identified incl. cascade)
+  const fhRevRate     = d.effFhN    / N;
+  const hbocRevRate   = d.effHbocN  / N;
+
+  // Per-carrier annual management costs (undiscounted)
+  // Recover from PV totals: total = n_carriers × annual_cost × costPvF
+  const pvF = d.costPvF;
+  const safe = (denom, num) => denom > 0 ? num / denom : 0;
+  const lynchAnnualPerCarrier = safe(d.effLynchNForCost * pvF, d.lynchColoCost + d.lynchGynCost);
+  const fhAnnualPerCarrier    = safe(d.effFhNForCost    * pvF, d.fhMgmtCostOnly);
+  const hbocAnnualPerCarrier  = safe(d.effHbocNForCost  * pvF, d.hbocMriCost + d.hbocMammoCost);
+
+  // Per-carrier one-time costs (surgery in enrollment year, no costPvF)
+  const lynchOneTimePerCarrier = safe(d.effLynchNForCost, d.lynchHystCost);
+  const hbocOneTimePerCarrier  = safe(d.effHbocNForCost,  d.hbocMastCost + d.hbocRrsoCost);
+
+  // Per-carrier management revenue per year (undiscounted)
+  const lynchRevPerCarrierPerYr = safe(d.effLynchN * pvF, d.lynchMgmtRevenue);
+  const fhRevPerCarrierPerYr    = safe(d.effFhN    * pvF, d.fhMgmtRevenue);
+  const hbocRevPerCarrierPerYr  = safe(d.effHbocN  * pvF, d.hbocMgmtRevenue);
+
+  const costScreen = $('cost_screen');
+  const costGC     = $('cost_gc');
+  const gcUptake   = pct('gc_uptake');
+  const revTest    = $('rev_test');
+  const revGC      = $('rev_gc');
+
+  const rows = [];
+  let cumulNet = 0, maxDeficit = 0, breakEvenYear = null;
+
+  for (let y = 1; y <= timeHorizon; y++) {
+    const isEnroll  = y <= enrollYears;
+    const newPts    = isEnroll ? cohortsPerYear : 0;
+    const newLynch  = newPts * lynchCostRate;
+    const newFh     = newPts * fhCostRate;
+    const newHboc   = newPts * hbocCostRate;
+    const newAllCostCarriers = newLynch + newFh + newHboc;
+
+    // Cumulative enrolled carriers (for recurring annual costs/revenues)
+    const enrolledYrs   = Math.min(y, enrollYears);
+    const cumulLynchC   = enrolledYrs * cohortsPerYear * lynchCostRate;
+    const cumulFhC      = enrolledYrs * cohortsPerYear * fhCostRate;
+    const cumulHbocC    = enrolledYrs * cohortsPerYear * hbocCostRate;
+    const cumulLynchR   = enrolledYrs * cohortsPerYear * lynchRevRate;
+    const cumulFhR      = enrolledYrs * cohortsPerYear * fhRevRate;
+    const cumulHbocR    = enrolledYrs * cohortsPerYear * hbocRevRate;
+
+    // Costs
+    const enrollCostY = newPts * costScreen
+                      + newAllCostCarriers * gcUptake * costGC
+                      + newLynch * lynchOneTimePerCarrier
+                      + newHboc  * hbocOneTimePerCarrier;
+    const mgmtCostY   = cumulLynchC * lynchAnnualPerCarrier
+                      + cumulFhC    * fhAnnualPerCarrier
+                      + cumulHbocC  * hbocAnnualPerCarrier;
+    const totalCostY  = enrollCostY + mgmtCostY;
+
+    // Revenue
+    const enrollRevY  = newPts * revTest * blendFactor
+                      + newAllCostCarriers * gcUptake * revGC * blendFactor;
+    const mgmtRevY    = cumulLynchR * lynchRevPerCarrierPerYr
+                      + cumulFhR    * fhRevPerCarrierPerYr
+                      + cumulHbocR  * hbocRevPerCarrierPerYr;
+    const totalRevY   = enrollRevY + mgmtRevY;
+
+    const netY  = totalRevY - totalCostY;
+    cumulNet   += netY;
+    maxDeficit  = Math.min(maxDeficit, cumulNet);
+    if (breakEvenYear === null && cumulNet >= 0) breakEvenYear = y;
+
+    rows.push({ y, newPts, enrollCostY, mgmtCostY, totalCostY,
+                enrollRevY, mgmtRevY, totalRevY, netY, cumulNet });
+  }
+
+  renderPhasedCashFlow(rows, breakEvenYear, enrollYears, maxDeficit);
+}
+
+function renderPhasedCashFlow(rows, breakEvenYear, enrollYears, maxDeficit) {
+  const fm   = n => fmtM(Math.abs(n));
+  const fi   = n => Math.round(n).toLocaleString('en-US');
+  const sign = n => n >= 0 ? '+' : '−';
+  const cls  = n => n >= 0 ? 'text-teal-700' : 'text-rose-600';
+  const N    = $('n_screened');
+  const finalCumul = rows.length ? rows[rows.length - 1].cumulNet : 0;
+
+  const kpis = `
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div class="rounded-xl p-3 bg-slate-50 border border-slate-200 text-center">
+        <div class="text-xl font-black ${breakEvenYear ? 'text-teal-700' : 'text-rose-600'}">${breakEvenYear ? 'Year ' + breakEvenYear : 'None'}</div>
+        <div class="text-xs text-slate-500 mt-0.5">Break-even year</div>
+      </div>
+      <div class="rounded-xl p-3 bg-slate-50 border border-slate-200 text-center">
+        <div class="text-xl font-black text-rose-600">−${fm(maxDeficit)}</div>
+        <div class="text-xs text-slate-500 mt-0.5">Peak cash deficit</div>
+      </div>
+      <div class="rounded-xl p-3 bg-slate-50 border border-slate-200 text-center">
+        <div class="text-xl font-black ${cls(finalCumul)}">${sign(finalCumul)}${fm(finalCumul)}</div>
+        <div class="text-xs text-slate-500 mt-0.5">Cumulative net (yr ${rows.length})</div>
+      </div>
+      <div class="rounded-xl p-3 bg-slate-50 border border-slate-200 text-center">
+        <div class="text-xl font-black text-slate-700">${fi(N / enrollYears)}</div>
+        <div class="text-xs text-slate-500 mt-0.5">Patients/yr (enrollment)</div>
+      </div>
+    </div>`;
+
+  const displayRows = rows.slice(0, 20);
+  const tableRows = displayRows.map(r => {
+    const isEnroll   = r.y <= enrollYears;
+    const isBE       = r.y === breakEvenYear;
+    const rowBg      = isBE ? 'bg-teal-50' : (isEnroll ? 'bg-indigo-50/40' : '');
+    return `<tr class="${rowBg} border-b border-slate-100">
+      <td class="py-1.5 px-2 font-semibold text-slate-700 whitespace-nowrap text-xs">
+        ${r.y}
+        ${isEnroll ? '<span class="ml-1 text-indigo-400 font-normal text-[10px]">enroll</span>' : ''}
+        ${isBE     ? '<span class="ml-1 text-teal-600 font-bold text-[10px]">✓ BE</span>' : ''}
+      </td>
+      <td class="py-1.5 px-2 text-right tabular-nums text-xs text-slate-500">${isEnroll ? fi(r.newPts) : '—'}</td>
+      <td class="py-1.5 px-2 text-right tabular-nums text-xs text-red-600">${fmtM(r.enrollCostY)}</td>
+      <td class="py-1.5 px-2 text-right tabular-nums text-xs text-orange-600">${fmtM(r.mgmtCostY)}</td>
+      <td class="py-1.5 px-2 text-right tabular-nums text-xs text-teal-600">${fmtM(r.enrollRevY)}</td>
+      <td class="py-1.5 px-2 text-right tabular-nums text-xs text-teal-700">${fmtM(r.mgmtRevY)}</td>
+      <td class="py-1.5 px-2 text-right tabular-nums text-xs font-semibold ${cls(r.netY)}">${sign(r.netY)}${fm(r.netY)}</td>
+      <td class="py-1.5 px-2 text-right tabular-nums text-xs font-bold ${cls(r.cumulNet)}">${sign(r.cumulNet)}${fm(r.cumulNet)}</td>
+    </tr>`;
+  }).join('');
+
+  const limitNote = rows.length > 20
+    ? `<div class="text-xs text-slate-400 text-center mt-2">Showing years 1–20 of ${rows.length}. Cumulative net at year ${rows.length}: <span class="${cls(finalCumul)} font-semibold">${sign(finalCumul)}${fm(finalCumul)}</span></div>`
+    : '';
+
+  document.getElementById('phased_cashflow_output').innerHTML = `
+    ${kpis}
+    <p class="text-xs text-slate-400 mb-2">Nominal (undiscounted) cash flows. Enrollment assumed uniform across ${enrollYears} year${enrollYears > 1 ? 's' : ''}. Payor mix and service rates from settings above.</p>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs border-collapse">
+        <thead>
+          <tr class="bg-slate-100 text-slate-600">
+            <th class="py-2 px-2 text-left font-semibold border border-slate-200">Year</th>
+            <th class="py-2 px-2 text-right font-semibold border border-slate-200">New pts</th>
+            <th class="py-2 px-2 text-right font-semibold border border-slate-200 text-red-600">Enroll cost</th>
+            <th class="py-2 px-2 text-right font-semibold border border-slate-200 text-orange-600">Mgmt cost</th>
+            <th class="py-2 px-2 text-right font-semibold border border-slate-200 text-teal-600">Enroll rev</th>
+            <th class="py-2 px-2 text-right font-semibold border border-slate-200 text-teal-700">Mgmt rev</th>
+            <th class="py-2 px-2 text-right font-semibold border border-slate-200">Net (yr)</th>
+            <th class="py-2 px-2 text-right font-semibold border border-slate-200">Cumulative</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+    ${limitNote}`;
+}
 
 // ─── TAB SWITCHING ────────────────────────────────────────────────
 function showTab(name) {
