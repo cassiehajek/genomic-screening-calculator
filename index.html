@@ -61,7 +61,21 @@
   </div>
 </header>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-6">
+<!-- ─── TAB NAV ──────────────────────────────────────────────────── -->
+<nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-8 flex">
+    <button onclick="showTab('calc')" id="tab-btn-calc"
+      class="px-5 py-3 text-sm font-medium border-b-2 border-indigo-600 text-indigo-700 transition-colors">
+      Calculator
+    </button>
+    <button onclick="showTab('assumptions')" id="tab-btn-assumptions"
+      class="px-5 py-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors">
+      Assumptions &amp; References
+    </button>
+  </div>
+</nav>
+
+<main id="tab-calc" class="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-6">
 
   <!-- ─── ROW 1: SCREENING PARAMETERS + DEMOGRAPHICS ──────────── -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -876,6 +890,307 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
   </div>
 
 </main>
+
+<!-- ─── ASSUMPTIONS & REFERENCES TAB ────────────────────────────── -->
+<div id="tab-assumptions" class="hidden max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-6">
+
+  <!-- Intro -->
+  <div class="section-card">
+    <div class="section-title">Model Assumptions &amp; Data Sources</div>
+    <p class="text-sm text-slate-600">All default values in the calculator are derived from published cost-effectiveness analyses. The table below documents each cost and clinical parameter, its current default, and the supporting reference. All values are editable in the Calculator tab.</p>
+  </div>
+
+  <!-- Programme Costs -->
+  <div class="section-card">
+    <div class="section-title">Programme Costs</div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs border-collapse">
+        <thead>
+          <tr class="bg-slate-100">
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-slate-200 w-44">Parameter</th>
+            <th class="py-2 px-3 text-right font-semibold text-slate-700 border border-slate-200 w-24">Default</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-slate-200">Basis</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-slate-200">Reference</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr class="bg-white hover:bg-slate-50">
+            <td class="py-2 px-3 border border-slate-200 font-medium">Panel test cost</td>
+            <td class="py-2 px-3 border border-slate-200 text-right">$300/person</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-600">Commercial multi-gene panel (Lynch + FH + HBOC). User-adjustable; SA range $100–$400.</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-500">Guzauskas 2023 base case ~$250; current commercial pricing ~$250–400</td>
+          </tr>
+          <tr class="bg-slate-50 hover:bg-slate-100">
+            <td class="py-2 px-3 border border-slate-200 font-medium">Genetic counselling</td>
+            <td class="py-2 px-3 border border-slate-200 text-right">$50/carrier</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-600">Abbreviated pre/post-test counselling per identified carrier; telehealth model assumed.</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-500">Guzauskas 2023</td>
+          </tr>
+          <tr class="bg-white hover:bg-slate-50">
+            <td class="py-2 px-3 border border-slate-200 font-medium">Discount rate</td>
+            <td class="py-2 px-3 border border-slate-200 text-right">3%/yr</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-600">Standard for U.S. health economic analyses; applied to both costs and QALYs. SA range 0–5%.</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-500">U.S. Panel on Cost-Effectiveness in Health and Medicine (2nd ed.); Guzauskas 2023</td>
+          </tr>
+          <tr class="bg-slate-50 hover:bg-slate-100">
+            <td class="py-2 px-3 border border-slate-200 font-medium">Time horizon</td>
+            <td class="py-2 px-3 border border-slate-200 text-right">30 yr</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-600">Programme duration over which surveillance and treatment costs accrue. Events use remaining risk years (to age 80), not this horizon. SA range 20–50 yr.</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-500">Guzauskas 2023 (50 yr); Spencer 2022 (20 yr)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Lynch Management -->
+  <div class="section-card">
+    <div class="section-title" style="color:#059669">Lynch Syndrome — Surveillance &amp; Management</div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs border-collapse">
+        <thead>
+          <tr class="bg-emerald-50">
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-emerald-200 w-44">Parameter</th>
+            <th class="py-2 px-3 text-right font-semibold text-slate-700 border border-emerald-200 w-24">Default</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-emerald-200">Basis</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-emerald-200">Reference</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-emerald-50">
+          <tr class="bg-white hover:bg-emerald-50">
+            <td class="py-2 px-3 border border-emerald-100 font-medium">Colonoscopy</td>
+            <td class="py-2 px-3 border border-emerald-100 text-right">$600/procedure</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-600">Medicare reimbursement rate (CPT 45378, diagnostic colonoscopy). Annual cost = cost ÷ frequency. Default frequency: every 2 years per NCCN. Updated from $2,500 (chargemaster) to $600 (Medicare).</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-500">Guzauskas GF et al. <em>Genet Med.</em> 2022; Medicare Fee Schedule CPT 45378 (~$400–700)</td>
+          </tr>
+          <tr class="bg-emerald-50 hover:bg-emerald-100">
+            <td class="py-2 px-3 border border-emerald-100 font-medium">Gynaecologic surveillance</td>
+            <td class="py-2 px-3 border border-emerald-100 text-right">$600/yr</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-600">Annual pelvic examination + endometrial sampling for female Lynch carriers. Applied at female carrier proportion (default 50%).</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-500">NCCN Lynch syndrome guidelines; Guzauskas 2022</td>
+          </tr>
+          <tr class="bg-white hover:bg-emerald-50">
+            <td class="py-2 px-3 border border-emerald-100 font-medium">Prophylactic hysterectomy/BSO</td>
+            <td class="py-2 px-3 border border-emerald-100 text-right">$12,000 one-time</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-600">Risk-reducing hysterectomy + bilateral salpingo-oophorectomy. Applied to female carriers only; excluded for age 76+ cohort (surgical ineligibility).</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-500">Guzauskas 2022; NCCN</td>
+          </tr>
+          <tr class="bg-emerald-50 hover:bg-emerald-100">
+            <td class="py-2 px-3 border border-emerald-100 font-medium">CRC lifetime risk (MLH1/MSH2)</td>
+            <td class="py-2 px-3 border border-emerald-100 text-right">55%</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-600">Cumulative lifetime CRC penetrance for MLH1/MSH2 carriers (highest-risk genes). SA range 44–66%.</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-500">Bonadona V et al. <em>JAMA.</em> 2011;305(22):2304–2310</td>
+          </tr>
+          <tr class="bg-white hover:bg-emerald-50">
+            <td class="py-2 px-3 border border-emerald-100 font-medium">Colonoscopy efficacy (CRC RR red.)</td>
+            <td class="py-2 px-3 border border-emerald-100 text-right">65%</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-600">CRC mortality reduction with regular colonoscopic surveillance. Reflects early detection + polypectomy benefit.</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-500">Guzauskas 2022; Vasen 2010</td>
+          </tr>
+          <tr class="bg-emerald-50 hover:bg-emerald-100">
+            <td class="py-2 px-3 border border-emerald-100 font-medium">Colonoscopy uptake</td>
+            <td class="py-2 px-3 border border-emerald-100 text-right">80%</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-600">Proportion of identified Lynch carriers adherent to surveillance. SA range 60–100%.</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-500">Guzauskas 2022</td>
+          </tr>
+          <tr class="bg-white hover:bg-emerald-50">
+            <td class="py-2 px-3 border border-emerald-100 font-medium">Prior identification</td>
+            <td class="py-2 px-3 border border-emerald-100 text-right">13%</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-600">Proportion of Lynch carriers already diagnosed before population screening (receive no incremental benefit). SA range 7–20%.</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-500">Guzauskas 2023, Table 1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FH Management -->
+  <div class="section-card">
+    <div class="section-title" style="color:#d97706">Familial Hypercholesterolaemia — Management</div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs border-collapse">
+        <thead>
+          <tr class="bg-amber-50">
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-amber-200 w-44">Parameter</th>
+            <th class="py-2 px-3 text-right font-semibold text-slate-700 border border-amber-200 w-24">Default</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-amber-200">Basis</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-amber-200">Reference</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-amber-50">
+          <tr class="bg-white hover:bg-amber-50">
+            <td class="py-2 px-3 border border-amber-100 font-medium">Statin / lipid-lowering therapy</td>
+            <td class="py-2 px-3 border border-amber-100 text-right">$312/yr</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-600">~$26/month for generic high-intensity statin (rosuvastatin 20–40 mg). Reflects U.S. generic pricing post-patent expiry. Does not include PCSK9 inhibitor (modelled separately).</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-500">GoodRx generic rosuvastatin pricing; Spencer 2022 used ~$315/yr for high-intensity statin</td>
+          </tr>
+          <tr class="bg-amber-50 hover:bg-amber-100">
+            <td class="py-2 px-3 border border-amber-100 font-medium">Statin uptake</td>
+            <td class="py-2 px-3 border border-amber-100 text-right">60%</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-600">Proportion of identified FH carriers initiating and maintaining statin therapy. SA range 45–75%.</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-500">Guzauskas 2023, Table 1; Spencer 2022</td>
+          </tr>
+          <tr class="bg-white hover:bg-amber-50">
+            <td class="py-2 px-3 border border-amber-100 font-medium">Statin efficacy (MACE RR red.)</td>
+            <td class="py-2 px-3 border border-amber-100 text-right">35%</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-600">Relative reduction in major adverse cardiovascular events (MI, stroke, CV death) with high-intensity statin therapy in FH carriers.</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-500">Cholesterol Treatment Trialists' Collaboration; Guzauskas 2023</td>
+          </tr>
+          <tr class="bg-amber-50 hover:bg-amber-100">
+            <td class="py-2 px-3 border border-amber-100 font-medium">MACE lifetime risk</td>
+            <td class="py-2 px-3 border border-amber-100 text-right">~50%</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-600">Cumulative lifetime risk of major adverse cardiovascular event in untreated FH carrier. Reflects elevated LDL from birth.</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-500">Nordestgaard BG et al. <em>Eur Heart J.</em> 2013;34:3478–3490</td>
+          </tr>
+          <tr class="bg-white hover:bg-amber-50">
+            <td class="py-2 px-3 border border-amber-100 font-medium">Cascade yield</td>
+            <td class="py-2 px-3 border border-amber-100 text-right">65%</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-600">Additional carriers identified per 100 index cases via first-degree relative testing. Calibrated to reproduce Guzauskas 2023 FH output (~111 QALYs/100K at age 30). Each FH carrier has ~3–4 first-degree relatives × 50% carrier probability × 40–50% uptake ≈ 60–100% yield.</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-500">Guzauskas 2023; Nordestgaard 2013</td>
+          </tr>
+          <tr class="bg-amber-50 hover:bg-amber-100">
+            <td class="py-2 px-3 border border-amber-100 font-medium">Prior identification</td>
+            <td class="py-2 px-3 border border-amber-100 text-right">5%</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-600">Proportion of FH carriers already diagnosed before population screening. FH is substantially underdiagnosed (&lt;10% of U.S. cases identified). SA range 1–9%.</td>
+            <td class="py-2 px-3 border border-amber-100 text-slate-500">Guzauskas 2023, Table 1; Nordestgaard 2013</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HBOC Management -->
+  <div class="section-card">
+    <div class="section-title" style="color:#7c3aed">HBOC (BRCA1/BRCA2) — Surveillance &amp; Management</div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs border-collapse">
+        <thead>
+          <tr class="bg-purple-50">
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-purple-200 w-44">Parameter</th>
+            <th class="py-2 px-3 text-right font-semibold text-slate-700 border border-purple-200 w-24">Default</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-purple-200">Basis</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-purple-200">Reference</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-purple-50">
+          <tr class="bg-white hover:bg-purple-50">
+            <td class="py-2 px-3 border border-purple-100 font-medium">Breast MRI</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">$1,000/yr</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Annual bilateral breast MRI (CPT 77049). Medicare fee schedule rate. Recommended annually for BRCA1/2 carriers age 25–75 (NCCN). Updated from $1,200 to $1,000 to align with published CEA inputs.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guzauskas GF et al. <em>JAMA Netw Open.</em> 2020;3(10):e2022874; Guo F et al. <em>JAMA Netw Open.</em> 2024;7(2):e2356078; Medicare CPT 77049</td>
+          </tr>
+          <tr class="bg-purple-50 hover:bg-purple-100">
+            <td class="py-2 px-3 border border-purple-100 font-medium">Mammogram</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">$175/yr</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Annual screening mammogram (CPT 77067, bilateral digital). Medicare allowable rate. Recommended annually alongside MRI for BRCA carriers. Updated from $250 to $175.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guo F et al. <em>JAMA Netw Open.</em> 2024;7(2):e2356078; Medicare CPT 77067 (~$100–175)</td>
+          </tr>
+          <tr class="bg-white hover:bg-purple-50">
+            <td class="py-2 px-3 border border-purple-100 font-medium">Risk-reducing mastectomy</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">$20,000 one-time</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Bilateral risk-reducing mastectomy (RRM) cost. One-time; excluded for age 76+ cohort (surgical ineligibility). Reduces breast cancer risk by ~90–95%.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guo F et al. <em>JAMA Netw Open.</em> 2024;7(2):e2356078; Guzauskas 2020</td>
+          </tr>
+          <tr class="bg-purple-50 hover:bg-purple-100">
+            <td class="py-2 px-3 border border-purple-100 font-medium">RRSO</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">$12,000 one-time</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Risk-reducing salpingo-oophorectomy. One-time; excluded for age 76+ cohort. Reduces ovarian cancer risk by ~80% and adds breast cancer benefit in premenopausal carriers.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guo F et al. <em>JAMA Netw Open.</em> 2024;7(2):e2356078; Guzauskas 2020</td>
+          </tr>
+          <tr class="bg-white hover:bg-purple-50">
+            <td class="py-2 px-3 border border-purple-100 font-medium">Breast cancer lifetime risk (BRCA1)</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">72%</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Cumulative lifetime breast cancer risk for BRCA1 carriers to age 80. SA range 58–86%.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Kuchenbaecker KB et al. <em>JAMA.</em> 2017;317(23):2402–2416</td>
+          </tr>
+          <tr class="bg-purple-50 hover:bg-purple-100">
+            <td class="py-2 px-3 border border-purple-100 font-medium">Ovarian cancer lifetime risk (BRCA1)</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">44%</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Cumulative lifetime ovarian cancer risk for BRCA1 carriers to age 80.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Kuchenbaecker KB et al. <em>JAMA.</em> 2017;317(23):2402–2416</td>
+          </tr>
+          <tr class="bg-white hover:bg-purple-50">
+            <td class="py-2 px-3 border border-purple-100 font-medium">Prior identification</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">17%</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Proportion of HBOC carriers already diagnosed before population screening (via clinical testing, family history). SA range 14–21%.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guzauskas 2023, Table 1; Guzauskas 2020</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Averted Treatment Costs -->
+  <div class="section-card">
+    <div class="section-title">Averted Disease Treatment Costs</div>
+    <p class="text-xs text-slate-500 mb-3">Lifetime cost per disease event averted. These are credited against programme costs in the ICER calculation (as negative costs).</p>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs border-collapse">
+        <thead>
+          <tr class="bg-slate-100">
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-slate-200 w-44">Condition</th>
+            <th class="py-2 px-3 text-right font-semibold text-slate-700 border border-slate-200 w-28">Default cost</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-slate-200">Basis</th>
+            <th class="py-2 px-3 text-left font-semibold text-slate-700 border border-slate-200">Reference</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr class="bg-white hover:bg-slate-50">
+            <td class="py-2 px-3 border border-slate-200 font-medium">Colorectal cancer (Lynch)</td>
+            <td class="py-2 px-3 border border-slate-200 text-right">$120,000</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-600">Lifetime medical costs per CRC case (surgery, chemotherapy, follow-up).</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-500">Guzauskas 2022; SEER-Medicare cost estimates</td>
+          </tr>
+          <tr class="bg-slate-50 hover:bg-slate-100">
+            <td class="py-2 px-3 border border-slate-200 font-medium">Endometrial cancer (Lynch)</td>
+            <td class="py-2 px-3 border border-slate-200 text-right">$75,000</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-600">Lifetime medical costs per endometrial cancer case.</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-500">Guzauskas 2022</td>
+          </tr>
+          <tr class="bg-white hover:bg-slate-50">
+            <td class="py-2 px-3 border border-slate-200 font-medium">MACE — MI / stroke (FH)</td>
+            <td class="py-2 px-3 border border-slate-200 text-right">$95,000</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-600">Lifetime medical costs per major adverse cardiovascular event including acute care, rehabilitation, and secondary prevention.</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-500">Spencer 2022; AHA cost estimates</td>
+          </tr>
+          <tr class="bg-slate-50 hover:bg-slate-100">
+            <td class="py-2 px-3 border border-slate-200 font-medium">Breast cancer (HBOC)</td>
+            <td class="py-2 px-3 border border-slate-200 text-right">$100,000</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-600">Lifetime medical costs per breast cancer case (surgery, radiation, systemic therapy, surveillance).</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-500">Guzauskas 2020; Guo 2024</td>
+          </tr>
+          <tr class="bg-white hover:bg-slate-50">
+            <td class="py-2 px-3 border border-slate-200 font-medium">Ovarian cancer (HBOC)</td>
+            <td class="py-2 px-3 border border-slate-200 text-right">$150,240</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-600">Lifetime medical costs per ovarian cancer case. Higher than breast cancer reflecting poorer prognosis, recurrence rates, and extended chemotherapy.</td>
+            <td class="py-2 px-3 border border-slate-200 text-slate-500">Guzauskas 2020; Guo 2024; SEER-Medicare</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- References -->
+  <div class="section-card">
+    <div class="section-title">Key References</div>
+    <ol class="text-xs text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
+      <li><strong>Guzauskas GF et al.</strong> Population Genomic Screening for Three Common Hereditary Conditions: A Cost-Effectiveness Analysis. <em>Ann Intern Med.</em> 2023;176:585–595. doi:10.7326/M22-0846 — <span class="text-slate-400">Primary reference; all base-case defaults calibrated to this paper.</span></li>
+      <li><strong>Guzauskas GF, Jiang S, et al.</strong> Cost-effectiveness of Population-wide Genomic Screening for Lynch Syndrome in the United States. <em>Genet Med.</em> 2022;24(5):1017–1026. doi:10.1016/j.gim.2022.01.017 — <span class="text-slate-400">Lynch carrier prevalence 0.3%; colonoscopy costs; age-specific ICERs (age 30: $132K, age 40: $124K, age 50: $140K).</span></li>
+      <li><strong>Guzauskas GF et al.</strong> Cost-effectiveness of Population-Wide Genomic Screening for Hereditary Breast and Ovarian Cancer in the United States. <em>JAMA Netw Open.</em> 2020;3(10):e2022874. doi:10.1001/jamanetworkopen.2020.22874 — <span class="text-slate-400">HBOC carrier prevalence 0.495%; RRM/RRSO costs; breast MRI ~$1,000/yr; age-specific ICERs (age 30: $87.7K, age 45: $268K).</span></li>
+      <li><strong>Guo F et al.</strong> Cost-Effectiveness of Population-Based Multigene Testing for Breast and Ovarian Cancer Prevention. <em>JAMA Netw Open.</em> 2024;7(2):e2356078. doi:10.1001/jamanetworkopen.2023.56078 — <span class="text-slate-400">HBOC management costs; mammogram ~$175/yr; RRM $20K; RRSO $12K; PALB2 parameters.</span></li>
+      <li><strong>Spencer SJ, Jones LK, Guzauskas GF, et al.</strong> Cost-effectiveness of Population-Wide Genomic Screening for Familial Hypercholesterolemia in the United States. <em>J Clin Lipidol.</em> 2022;16(5):667–675. doi:10.1016/j.jacl.2022.07.014 — <span class="text-slate-400">FH standalone ICER ~$181K/QALY at age 20; statin costs; bundling substantially improves cost-effectiveness.</span></li>
+      <li><strong>Bonadona V et al.</strong> Cancer Risks Associated with Germline Mutations in MLH1, MSH2, and MSH6 Genes in Lynch Syndrome. <em>JAMA.</em> 2011;305(22):2304–2310. — <span class="text-slate-400">Lynch CRC and endometrial lifetime risk estimates.</span></li>
+      <li><strong>Nordestgaard BG et al.</strong> Familial hypercholesterolaemia is underdiagnosed and undertreated in the general population. <em>Eur Heart J.</em> 2013;34(45):3478–3490. — <span class="text-slate-400">FH prevalence and cardiovascular risk estimates.</span></li>
+      <li><strong>Kuchenbaecker KB et al.</strong> Risks of Breast, Ovarian, and Contralateral Breast Cancer for BRCA1 and BRCA2 Mutation Carriers. <em>JAMA.</em> 2017;317(23):2402–2416. — <span class="text-slate-400">BRCA1/2 lifetime cancer risk estimates.</span></li>
+    </ol>
+  </div>
+
+  <!-- Calibration note -->
+  <div class="text-xs text-slate-400 text-center pb-4 space-y-1">
+    <p>QALY per event values recalibrated (v2, 2026-03) so that with current carrier rate defaults, the model reproduces Guzauskas 2023 Table 2 condition-by-condition at age 30 (Lynch ~170, FH ~111, HBOC ~215 QALYs per 100K screened). See METHODOLOGY.md for full derivation.</p>
+  </div>
+
+</div>
 
 <script>
 // ─── DEFAULT QALY TABLES ───────────────────────────────────────────
@@ -1939,6 +2254,17 @@ document.querySelectorAll('details.section-card').forEach(det => {
 
 // Run on load with defaults
 document.addEventListener('DOMContentLoaded', () => { /* auto-run optional */ });
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────
+function showTab(name) {
+  const isCalc = name === 'calc';
+  document.getElementById('tab-calc').classList.toggle('hidden', !isCalc);
+  document.getElementById('tab-assumptions').classList.toggle('hidden', isCalc);
+  const activeClass = 'px-5 py-3 text-sm font-medium border-b-2 border-indigo-600 text-indigo-700 transition-colors';
+  const inactiveClass = 'px-5 py-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors';
+  document.getElementById('tab-btn-calc').className = isCalc ? activeClass : inactiveClass;
+  document.getElementById('tab-btn-assumptions').className = isCalc ? inactiveClass : activeClass;
+}
 </script>
 </body>
 </html>
