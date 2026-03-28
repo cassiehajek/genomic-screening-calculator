@@ -232,16 +232,16 @@ Does not affect management uptake (set separately per condition).</span>
             <tbody>
               <tr class="bg-white">
                 <td class="py-1.5 px-2 border border-emerald-200 font-medium text-slate-700 tooltip-wrap">Colonoscopy
-                  <span class="tip" style="width:240px">Cost per procedure. Annual equivalent = cost ÷ frequency. Applies to all Lynch carriers. NCCN recommends every 1–2 years. Default reflects Medicare reimbursement rate (~$400–700/procedure; Guzauskas 2022).</span>
+                  <span class="tip" style="width:250px">Annual colonoscopy surveillance cost per carrier. Default $1,555/yr is the total annual program cost (procedure + prep + professional fees) from Dinh et al. 2013, as used in Guzauskas 2023 Table 1. Annual cost = cost ÷ frequency.</span>
                 </td>
                 <td class="py-1 px-1.5 border border-emerald-200">
-                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_lnch_colo" class="input-field pl-5 text-right" value="600" min="0" /></div>
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_lnch_colo" class="input-field pl-5 text-right" value="1555" min="0" /></div>
                 </td>
                 <td class="py-1 px-1.5 border border-emerald-200">
                   <div class="relative"><input type="number" id="lnch_colo_uptake" class="input-field text-center" value="80" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
                 </td>
                 <td class="py-1 px-1.5 border border-emerald-200">
-                  <div class="relative"><input type="number" id="lnch_colo_freq" class="input-field text-center" value="2" min="1" max="5" step="1" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">yr</span></div>
+                  <div class="relative"><input type="number" id="lnch_colo_freq" class="input-field text-center" value="1" min="1" max="5" step="1" /><span class="absolute right-2 top-1.5 text-slate-400 text-xs">yr</span></div>
                 </td>
                 <td class="py-1.5 px-2 border border-emerald-200 text-emerald-600 text-xs">Recurring</td>
               </tr>
@@ -299,7 +299,7 @@ Does not affect management uptake (set separately per condition).</span>
                   <span class="tip" style="width:230px">Annual breast MRI cost. Default reflects Medicare fee schedule (CPT 77049; Guzauskas 2020, Guo 2024 JAMA Netw Open: ~$1,000/yr).</span>
                 </td>
                 <td class="py-1 px-1.5 border border-purple-200">
-                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mri" class="input-field pl-5 text-right" value="1000" min="0" /></div>
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mri" class="input-field pl-5 text-right" value="1403" min="0" /></div>
                 </td>
                 <td class="py-1 px-1.5 border border-purple-200">
                   <div class="relative"><input type="number" id="hboc_mri_uptake" class="input-field text-center" value="65" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
@@ -308,10 +308,10 @@ Does not affect management uptake (set separately per condition).</span>
               </tr>
               <tr class="bg-purple-50">
                 <td class="py-1.5 px-2 border border-purple-200 font-medium text-slate-700 tooltip-wrap">Mammogram
-                  <span class="tip" style="width:230px">Annual mammography cost. Default reflects published CEA convention (Guo 2024 JAMA Netw Open; Medicare allowable ~$100–175/yr).</span>
+                  <span class="tip" style="width:240px">Annual mammogram cost. Default $228/yr from Guzauskas 2023 Table 1 (Sun et al. 2019; range $171–$285/yr).</span>
                 </td>
                 <td class="py-1 px-1.5 border border-purple-200">
-                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mammo" class="input-field pl-5 text-right" value="175" min="0" /></div>
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mammo" class="input-field pl-5 text-right" value="228" min="0" /></div>
                 </td>
                 <td class="py-1 px-1.5 border border-purple-200">
                   <div class="relative"><input type="number" id="hboc_mammo_uptake" class="input-field text-center" value="80" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
@@ -323,7 +323,7 @@ Does not affect management uptake (set separately per condition).</span>
                   <span class="tip" style="width:220px">One-time cost, not annuitized. Reflects surgical and hospital costs for bilateral prophylactic mastectomy. Default $20,000 per Guo 2024.</span>
                 </td>
                 <td class="py-1 px-1.5 border border-purple-200">
-                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mast" class="input-field pl-5 text-right" value="20000" min="0" /></div>
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_mast" class="input-field pl-5 text-right" value="22110" min="0" /></div>
                 </td>
                 <td class="py-1 px-1.5 border border-purple-200">
                   <div class="relative"><input type="number" id="hboc_mast_uptake" class="input-field text-center" value="40" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
@@ -335,7 +335,7 @@ Does not affect management uptake (set separately per condition).</span>
                   <span class="tip" style="width:220px">One-time cost, not annuitized. Risk-reducing bilateral salpingo-oophorectomy. Default $12,000 per Guo 2024.</span>
                 </td>
                 <td class="py-1 px-1.5 border border-purple-200">
-                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_rrso" class="input-field pl-5 text-right" value="12000" min="0" /></div>
+                  <div class="relative"><span class="absolute left-2 top-1.5 text-slate-400">$</span><input type="number" id="cost_hboc_rrso" class="input-field pl-5 text-right" value="8476" min="0" /></div>
                 </td>
                 <td class="py-1 px-1.5 border border-purple-200">
                   <div class="relative"><input type="number" id="hboc_rrso_uptake" class="input-field text-center" value="50" min="0" max="100" step="5" /><span class="absolute right-2 top-1.5 text-slate-400">%</span></div>
@@ -958,10 +958,10 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
         </thead>
         <tbody class="divide-y divide-emerald-50">
           <tr class="bg-white hover:bg-emerald-50">
-            <td class="py-2 px-3 border border-emerald-100 font-medium">Colonoscopy</td>
-            <td class="py-2 px-3 border border-emerald-100 text-right">$600/procedure</td>
-            <td class="py-2 px-3 border border-emerald-100 text-slate-600">Medicare reimbursement rate (CPT 45378, diagnostic colonoscopy). Annual cost = cost ÷ frequency. Default frequency: every 2 years per NCCN. Updated from $2,500 (chargemaster) to $600 (Medicare).</td>
-            <td class="py-2 px-3 border border-emerald-100 text-slate-500">Guzauskas GF et al. <em>Genet Med.</em> 2022; Medicare Fee Schedule CPT 45378 (~$400–700)</td>
+            <td class="py-2 px-3 border border-emerald-100 font-medium">Colonoscopy surveillance</td>
+            <td class="py-2 px-3 border border-emerald-100 text-right">$1,555/yr</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-600">Total annual colonoscopy surveillance cost per carrier (procedure + bowel prep + professional fees, amortized annually). This is the annual program cost, not a per-procedure price. Plausible range $1,166–$1,944/yr.</td>
+            <td class="py-2 px-3 border border-emerald-100 text-slate-500">Guzauskas 2023 Table 1; Dinh TA et al. <em>Clin Gastroenterol Hepatol.</em> 2013;11:1158–1166 (ref 20)</td>
           </tr>
           <tr class="bg-emerald-50 hover:bg-emerald-100">
             <td class="py-2 px-3 border border-emerald-100 font-medium">Gynaecologic surveillance</td>
@@ -1075,27 +1075,27 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
         <tbody class="divide-y divide-purple-50">
           <tr class="bg-white hover:bg-purple-50">
             <td class="py-2 px-3 border border-purple-100 font-medium">Breast MRI</td>
-            <td class="py-2 px-3 border border-purple-100 text-right">$1,000/yr</td>
-            <td class="py-2 px-3 border border-purple-100 text-slate-600">Annual bilateral breast MRI (CPT 77049). Medicare fee schedule rate. Recommended annually for BRCA1/2 carriers age 25–75 (NCCN). Updated from $1,200 to $1,000 to align with published CEA inputs.</td>
-            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guzauskas GF et al. <em>JAMA Netw Open.</em> 2020;3(10):e2022874; Guo F et al. <em>JAMA Netw Open.</em> 2024;7(2):e2356078; Medicare CPT 77049</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">$1,403/yr</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Annual bilateral breast MRI cost. Plausible range $1,052–$1,754/yr. Recommended annually for BRCA1/2 carriers age 25–75 (NCCN).</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guzauskas 2023 Table 1; Sun L et al. <em>JAMA Oncol.</em> 2019;5:1718–1730 (ref 43)</td>
           </tr>
           <tr class="bg-purple-50 hover:bg-purple-100">
             <td class="py-2 px-3 border border-purple-100 font-medium">Mammogram</td>
-            <td class="py-2 px-3 border border-purple-100 text-right">$175/yr</td>
-            <td class="py-2 px-3 border border-purple-100 text-slate-600">Annual screening mammogram (CPT 77067, bilateral digital). Medicare allowable rate. Recommended annually alongside MRI for BRCA carriers. Updated from $250 to $175.</td>
-            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guo F et al. <em>JAMA Netw Open.</em> 2024;7(2):e2356078; Medicare CPT 77067 (~$100–175)</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">$228/yr</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Annual screening mammogram cost. Plausible range $171–$285/yr. Recommended annually alongside MRI for BRCA carriers.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guzauskas 2023 Table 1; Sun L et al. <em>JAMA Oncol.</em> 2019;5:1718–1730 (ref 43)</td>
           </tr>
           <tr class="bg-white hover:bg-purple-50">
             <td class="py-2 px-3 border border-purple-100 font-medium">Risk-reducing mastectomy</td>
-            <td class="py-2 px-3 border border-purple-100 text-right">$20,000 one-time</td>
-            <td class="py-2 px-3 border border-purple-100 text-slate-600">Bilateral risk-reducing mastectomy (RRM) cost. One-time; excluded for age 76+ cohort (surgical ineligibility). Reduces breast cancer risk by ~90–95%.</td>
-            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guo F et al. <em>JAMA Netw Open.</em> 2024;7(2):e2356078; Guzauskas 2020</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">$22,110 one-time</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Bilateral risk-reducing mastectomy (RRM) cost. One-time; excluded for age 76+ cohort (surgical ineligibility). Reduces breast cancer risk by ~90–95%. Plausible range $16,583–$27,638.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guzauskas 2023 Table 1; Sun L et al. <em>JAMA Oncol.</em> 2019;5:1718–1730 (ref 43)</td>
           </tr>
           <tr class="bg-purple-50 hover:bg-purple-100">
             <td class="py-2 px-3 border border-purple-100 font-medium">RRSO</td>
-            <td class="py-2 px-3 border border-purple-100 text-right">$12,000 one-time</td>
-            <td class="py-2 px-3 border border-purple-100 text-slate-600">Risk-reducing salpingo-oophorectomy. One-time; excluded for age 76+ cohort. Reduces ovarian cancer risk by ~80% and adds breast cancer benefit in premenopausal carriers.</td>
-            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guo F et al. <em>JAMA Netw Open.</em> 2024;7(2):e2356078; Guzauskas 2020</td>
+            <td class="py-2 px-3 border border-purple-100 text-right">$8,476 one-time</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-600">Risk-reducing salpingo-oophorectomy. One-time; excluded for age 76+ cohort. Reduces ovarian cancer risk by ~80% and adds breast cancer benefit in premenopausal carriers. Plausible range $6,357–$10,595.</td>
+            <td class="py-2 px-3 border border-purple-100 text-slate-500">Guzauskas 2023 Table 1; Sun L et al. <em>JAMA Oncol.</em> 2019;5:1718–1730 (ref 43)</td>
           </tr>
           <tr class="bg-white hover:bg-purple-50">
             <td class="py-2 px-3 border border-purple-100 font-medium">Breast cancer lifetime risk (BRCA1)</td>
