@@ -1194,6 +1194,7 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
       <li><strong>HBOC mammography</strong>: charges only the incremental above biennial usual-care screening (annual − biennial = 50% of the annual cost). Population women receive biennial mammography regardless of BRCA status.</li>
       <li><strong>Prior-identified carriers</strong>: the <em>prior identification</em> proportion (Lynch 13%, FH 5%, HBOC 17%) is excluded from all management cost calculations, since those individuals are already in surveillance and their costs are part of usual care.</li>
       <li><strong>HBOC MRI, all surgical costs, FH statins</strong>: charged at full cost — these interventions do not occur in usual care for the general population.</li>
+      <li><strong>HBOC surveillance vs. prophylaxis paths</strong>: carriers who choose prophylactic surgery (mastectomy/RRSO; default 30% of identified carriers) exit surveillance and do not accrue ongoing imaging costs. Surveillance costs (MRI, mammography) apply only to the remaining 70% on the surveillance path. This mirrors the QALY calculation, which already uses the same prophylaxis fraction (<em>% choosing prophylaxis</em>) to partition benefit pathways.</li>
     </ul>
   </div>
 
@@ -1651,10 +1652,17 @@ function calculateCore() {
   // Surveillance costs recur annually (pvF annuity); surgical costs are one-time (no pvF)
   // Mammography: charge only the incremental above usual-care biennial screening
   const incrMammoPerYr   = Math.max(0, $('cost_hboc_mammo') - $('cost_hboc_mammo') / 2);
-  const hbocMriCost      = effHbocNForCost * pct('hboc_mri_uptake')   * $('cost_hboc_mri')   * costPvF;
-  const hbocMammoCost    = effHbocNForCost * pct('hboc_mammo_uptake')  * incrMammoPerYr       * costPvF;
-  const hbocMastCost     = effHbocNForCost * pct('hboc_mast_uptake')   * $('cost_hboc_mast')  * surgEligFrac;
-  const hbocRrsoCost     = effHbocNForCost * pct('hboc_rrso_uptake')   * $('cost_hboc_rrso')  * surgEligFrac;
+  // Surveillance and prophylaxis paths are mutually exclusive — mirrors the QALY model
+  // which already uses prophylPct to partition these paths.
+  // Carriers on the surveillance path (1 − prophylPct = 70%) accrue ongoing MRI/mammo costs.
+  // Carriers on the prophylaxis path (prophylPct = 30%) undergo one-time surgery and
+  // exit surveillance; they are not additionally charged ongoing imaging costs.
+  const hbocSurvFrac    = 1 - prophylPct;
+  const hbocProphylFrac = prophylPct;
+  const hbocMriCost     = effHbocNForCost * hbocSurvFrac    * pct('hboc_mri_uptake')   * $('cost_hboc_mri')   * costPvF;
+  const hbocMammoCost   = effHbocNForCost * hbocSurvFrac    * pct('hboc_mammo_uptake')  * incrMammoPerYr       * costPvF;
+  const hbocMastCost    = effHbocNForCost * hbocProphylFrac * pct('hboc_mast_uptake')   * $('cost_hboc_mast')  * surgEligFrac;
+  const hbocRrsoCost    = effHbocNForCost * hbocProphylFrac * pct('hboc_rrso_uptake')   * $('cost_hboc_rrso')  * surgEligFrac;
   const hbocMgmtCost    = hbocMriCost + hbocMammoCost + hbocMastCost + hbocRrsoCost;
   const hbocAvertedBreast  = hbocBreastPrev  * $('cost_breast');
   const hbocAvertedOvarian = hbocOvarianPrev * $('cost_ovarian');
