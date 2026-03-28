@@ -1202,9 +1202,21 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
     </ul>
   </div>
 
+  <!-- Model structure note -->
+  <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 space-y-3">
+    <div class="font-semibold text-slate-800">Model structure: why this is not a full Markov model</div>
+    <p>The reference paper (Guzauskas 2023) uses a <strong>Markov state-transition model</strong> — a method that explicitly defines health states (e.g., "healthy carrier," "cancer diagnosed," "in treatment," "remission," "dead") and simulates annual transitions between them over a lifetime horizon, accumulating costs and QALYs in each state at each step. This calculator uses a simplified analytic approximation instead, for three reasons:</p>
+    <ol class="list-decimal list-inside space-y-2 text-slate-600">
+      <li><strong>Computational scale.</strong> A proper cohort Markov model for three conditions with multiple disease states, age-stratification, and two sexes requires hundreds of state-transition matrices iterated over 50+ annual cycles. The one-way sensitivity analysis multiplies that by hundreds of runs. This is feasible in Python or R with optimised matrix operations; it is not practical in a single-file browser application.</li>
+      <li><strong>The transition probability tables are not published.</strong> The Guzauskas model was built with age-specific cancer incidence rates, survival curves, utility weights by health state, and treatment costs by disease stage — sourced from SEER, NHANES, clinical trials, and meta-analyses. Those granular inputs are embedded in their model code and are not reported in the paper. Reproducing the full model would require re-deriving every table from primary sources.</li>
+      <li><strong>Calibration would become circular.</strong> The simplified formula here — <code class="bg-white border border-slate-200 px-1 rounded text-xs">carriers × (risk / accrual_yrs) × efficacy × ePvF</code> — collapses the full state-transition dynamics into two parameters: a lifetime penetrance and a present-value annuity factor. It works because it is calibrated to the Markov model's published aggregate outputs. Building an independent Markov model with different transition probabilities would require its own separate validation and would no longer be a reproduction of the paper.</li>
+    </ol>
+    <p class="text-slate-500 text-xs pt-1">This calculator is best understood as a <strong>calibrated analytic approximation</strong>: it reproduces the paper's aggregate outputs at the calibration anchor (age-30 cohort, base-case inputs) and extrapolates sensibly across parameter ranges. The tradeoff is transparency and speed — the full calculation logic is visible in the browser and runs instantly — versus the mechanistic granularity of a full state-transition model.</p>
+  </div>
+
   <!-- Calibration note -->
   <div class="text-xs text-slate-400 text-center pb-4 space-y-1">
-    <p>Default carrier rates and QALY per event values calibrated (v3, 2026-03) to Guzauskas 2023 reference inputs: Lynch 0.30%, HBOC BRCA1 0.11% + BRCA2 0.38% = 0.49%, PALB2 excluded, panel test $250/person. At these defaults the model reproduces Guzauskas 2023 Table 2 at age 30: Lynch ~170, FH ~111, HBOC ~215 QALYs per 100K screened → total ~495 QALYs → ICER ≈ $68,500/QALY. See METHODOLOGY.md for full derivation.</p>
+    <p>Default carrier rates reflect Guzauskas 2023 paper values (Lynch 0.35%, FH ~0.43%, HBOC BRCA1 0.29% + BRCA2 0.43% = 0.72%; PALB2 excluded). QALY per event values calibrated (v2, 2026-03) so that with these carrier rates the model reproduces Guzauskas 2023 Table 2 at age 30: Lynch ~170, FH ~111, HBOC ~215 QALYs per 100K screened → total ~495 QALYs. Panel test $250/person. PCSK9i set to 0% to match paper cost assumptions → ICER ≈ $68,500/QALY. See METHODOLOGY.md for full derivation.</p>
   </div>
 
 </div>
