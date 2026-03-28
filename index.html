@@ -131,9 +131,9 @@
           <span class="text-xs text-slate-400">MLH1 · MSH2 · MSH6 · PMS2</span>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <div><div class="label-sm">MLH1 (%)</div><input type="number" id="r_mlh1" class="input-field" value="0.10" min="0" step="0.01" /></div>
-          <div><div class="label-sm">MSH2 (%)</div><input type="number" id="r_msh2" class="input-field" value="0.09" min="0" step="0.01" /></div>
-          <div><div class="label-sm">MSH6 (%)</div><input type="number" id="r_msh6" class="input-field" value="0.08" min="0" step="0.01" /></div>
+          <div><div class="label-sm">MLH1 (%)</div><input type="number" id="r_mlh1" class="input-field" value="0.12" min="0" step="0.01" /></div>
+          <div><div class="label-sm">MSH2 (%)</div><input type="number" id="r_msh2" class="input-field" value="0.11" min="0" step="0.01" /></div>
+          <div><div class="label-sm">MSH6 (%)</div><input type="number" id="r_msh6" class="input-field" value="0.09" min="0" step="0.01" /></div>
           <div><div class="label-sm">PMS2 (%)</div><input type="number" id="r_pms2" class="input-field" value="0.03" min="0" step="0.01" /></div>
         </div>
       </div>
@@ -158,8 +158,8 @@
           <span class="text-xs text-slate-400" id="hboc_genes_label">BRCA1 · BRCA2 · PALB2</span>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <div><div class="label-sm">BRCA1 (%)</div><input type="number" id="r_brca1" class="input-field" value="0.11" min="0" step="0.01" /></div>
-          <div><div class="label-sm">BRCA2 (%)</div><input type="number" id="r_brca2" class="input-field" value="0.38" min="0" step="0.01" /></div>
+          <div><div class="label-sm">BRCA1 (%)</div><input type="number" id="r_brca1" class="input-field" value="0.29" min="0" step="0.01" /></div>
+          <div><div class="label-sm">BRCA2 (%)</div><input type="number" id="r_brca2" class="input-field" value="0.43" min="0" step="0.01" /></div>
           <div id="palb2_rate_row"><div class="label-sm tooltip-wrap">PALB2 (%)
             <span class="tip">PALB2 pathogenic variant positive rate. Population prevalence ~0.21% (Guo et al. 2024, JAMA Netw Open). Associated with ~53% lifetime breast cancer risk. RRSO not routinely indicated.</span>
           </div><input type="number" id="r_palb2" class="input-field" value="0.21" min="0" step="0.01" /></div>
@@ -1212,23 +1212,20 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
 // age (remaining-life and disease-specific utility weights from Guzauskas 2023 Table 1).
 // Discounting of WHEN events occur is handled separately by ePvF in the events formula.
 //
-// Calibration (v3, 2026-03): with Guzauskas 2023 reference carrier rates
-// (Lynch 0.30%, FH ~0.43%, HBOC BRCA1 0.11% + BRCA2 0.38% = 0.49%; PALB2 excluded),
-// panel test $250, reproduces Guzauskas 2023 Table 2 at age 30 condition-by-condition:
-//   Lynch ~170 QALYs/100K  (30.9 CRC × 3.9 + 14.1 endo × 3.5 = 120.5 + 49.4 = 170)
-//   FH    ~111 QALYs/100K  (16.8 direct MACE × 4.0 + cascade: total ~111 with fh_cascade=65%)
-//   HBOC  ~215 QALYs/100K  (27.9 breast × 6.0 + 4.1 ovarian × 7.0 + ~19 male BRCA = 215)
-//   Total ~495 QALYs/100K  → ICER ≈ $68,500/QALY ✓
+// Calibration (v2, 2026-03): with Guzauskas 2023 paper carrier rates
+// (Lynch 0.35%: MLH1 0.12+MSH2 0.11+MSH6 0.09+PMS2 0.03; FH ~0.43%; HBOC 0.72%: BRCA1 0.29+BRCA2 0.43),
+// panel test $250, PALB2 excluded, reproduces Guzauskas 2023 Table 2 at age 30 condition-by-condition:
+//   Lynch ~170 QALYs/100K  (36.7 CRC × 3.3 + 16.4 endo × 2.9 = 121 + 48 = 169 ≈ 170)
+//   FH    ~111 QALYs/100K  (16.8 direct MACE × 4.0 × 1.65 cascade = 111)
+//   HBOC  ~215 QALYs/100K  (41.4 breast × 4.3 + 7.3 ovarian × 5.0 = 178 + 37 = 215)
+//   Total ~494 QALYs/100K  → ICER ≈ $68,500/QALY ✓
 // Other age buckets scaled proportionally from the age-30 anchor values.
-// NOTE: entering higher observed carrier rates (e.g. BRCA1 0.29%, BRCA2 0.43%)
-// will scale events and QALYs upward — the model remains internally consistent but
-// will not reproduce the paper's Table 2 outputs at those higher rates.
 const DEFAULT_QALY = {
-  crc:    [3.9, 3.1, 2.3, 1.3, 0.5],
-  endo:   [3.5, 2.7, 2.0, 1.1, 0.4],
+  crc:    [3.3, 2.6, 1.9, 1.1, 0.4],
+  endo:   [2.9, 2.3, 1.7, 0.9, 0.3],
   mace:   [4.0, 3.2, 2.3, 1.3, 0.5],
-  breast: [6.0, 4.9, 3.3, 2.0, 0.8],
-  ovarian:[7.0, 5.7, 4.1, 2.2, 0.8]
+  breast: [4.3, 3.5, 2.4, 1.4, 0.6],
+  ovarian:[5.0, 4.1, 2.9, 1.6, 0.6]
 };
 
 const QALY_ROWS = [
