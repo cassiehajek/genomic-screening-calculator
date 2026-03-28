@@ -1185,6 +1185,18 @@ Range tested in sensitivity analysis: 20–50 yr.</span>
     </ol>
   </div>
 
+  <!-- Incremental cost methodology note -->
+  <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 space-y-2">
+    <div class="font-semibold text-slate-800">Cost methodology: incremental above usual care</div>
+    <p>Following Guzauskas 2023, this calculator charges <strong>incremental</strong> management costs above what would occur in usual care (without population screening):</p>
+    <ul class="list-disc list-inside space-y-1 text-slate-600">
+      <li><strong>Lynch colonoscopy</strong>: charges only the extra frequency above the average-risk decennial baseline (annual − decennial = 90% of the annual cost). Average-risk adults would receive one colonoscopy per 10 years regardless.</li>
+      <li><strong>HBOC mammography</strong>: charges only the incremental above biennial usual-care screening (annual − biennial = 50% of the annual cost). Population women receive biennial mammography regardless of BRCA status.</li>
+      <li><strong>Prior-identified carriers</strong>: the <em>prior identification</em> proportion (Lynch 13%, FH 5%, HBOC 17%) is excluded from all management cost calculations, since those individuals are already in surveillance and their costs are part of usual care.</li>
+      <li><strong>HBOC MRI, all surgical costs, FH statins</strong>: charged at full cost — these interventions do not occur in usual care for the general population.</li>
+    </ul>
+  </div>
+
   <!-- Calibration note -->
   <div class="text-xs text-slate-400 text-center pb-4 space-y-1">
     <p>QALY per event values recalibrated (v2, 2026-03) so that with current carrier rate defaults, the model reproduces Guzauskas 2023 Table 2 condition-by-condition at age 30 (Lynch ~170, FH ~111, HBOC ~215 QALYs per 100K screened). See METHODOLOGY.md for full derivation.</p>
@@ -1538,14 +1550,18 @@ function calculateCore() {
   const qalyPerEndo = weightedQaly('endo');
   const lynchQalys  = lynchCrcPrev * qalyPerCrc + lynchEndoPrev * qalyPerEndo;
 
-  // Lynch costs
-  const lynchScreenCost    = effLynchN * gcUptake * costGC;
+  // Lynch costs — incremental above usual care (Guzauskas 2023 approach)
+  // Prior-identified carriers (13%) are already in surveillance; exclude from incremental cost
+  const effLynchNForCost   = effLynchN * (1 - lnchPriorId);
+  const lynchScreenCost    = effLynchNForCost * gcUptake * costGC;
   // Surveillance costs recur annually (pvF annuity); surgical cost is one-time (no pvF)
   // Gynecologic surveillance and hysterectomy apply to female Lynch carriers only
+  // Colonoscopy: charge only the incremental above usual-care decennial frequency
   const coloFreqYrs        = Math.max($('lnch_colo_freq'), 0.5);  // prevent div-by-zero
-  const lynchColoCost      = effLynchN * pct('lnch_colo_uptake') * ($('cost_lnch_colo') / coloFreqYrs) * costPvF;
-  const lynchGynCost       = effLynchN * femalePct * pct('lnch_gyn_uptake') * $('cost_lnch_gyn') * costPvF;
-  const lynchHystCost      = effLynchN * femalePct * pct('lnch_hyst_uptake') * $('cost_lnch_hyst') * surgEligFrac;
+  const incrColoPerYr      = Math.max(0, $('cost_lnch_colo') / coloFreqYrs - $('cost_lnch_colo') / 10);
+  const lynchColoCost      = effLynchNForCost * pct('lnch_colo_uptake') * incrColoPerYr * costPvF;
+  const lynchGynCost       = effLynchNForCost * femalePct * pct('lnch_gyn_uptake') * $('cost_lnch_gyn') * costPvF;
+  const lynchHystCost      = effLynchNForCost * femalePct * pct('lnch_hyst_uptake') * $('cost_lnch_hyst') * surgEligFrac;
   const lynchMgmtCost      = lynchColoCost + lynchGynCost + lynchHystCost;
   const lynchAvertedCrc  = lynchCrcPrev * $('cost_crc');
   const lynchAvertedEndo = lynchEndoPrev * $('cost_endo');
@@ -1575,8 +1591,10 @@ function calculateCore() {
   // FH treatment cost: base cost_fh_mgmt already in input, add PCSK9i premium
   const fhPcsk9iPremium = $('fh_pcsk9i_pct') / 100 * $('fh_pcsk9i_cost');
   const fhAnnualTxCost  = $('cost_fh_mgmt') + fhPcsk9iPremium;
-  const fhScreenCost  = effFhN * gcUptake * costGC;
-  const fhMgmtCost    = effFhN * fhCompliance * fhAnnualTxCost * costPvF;
+  // FH costs — incremental above usual care; prior-identified (5%) already on treatment
+  const effFhNForCost = effFhN * (1 - fhPriorId);
+  const fhScreenCost  = effFhNForCost * gcUptake * costGC;
+  const fhMgmtCost    = effFhNForCost * fhCompliance * fhAnnualTxCost * costPvF;
   const fhAvertedCost = fhMacePrev * $('cost_cad');
   const fhNetCost     = fhMgmtCost + fhScreenCost - fhAvertedCost;
   const fhICER = fhQalys > 0 ? fhNetCost / fhQalys : Infinity;
@@ -1626,12 +1644,17 @@ function calculateCore() {
   const hbocQalys = hbocBreastPrev * qalyPerBreast + hbocOvarianPrev * qalyPerOvarian
                   + hbocMaleN * 0.05 * (brca1BreastRisk / HBOC_BREAST_ACCRUAL_YRS) * ePvF * (1 - hbocPriorId) * qalyPerBreast; // male BRCA modest benefit
 
-  const hbocScreenCost  = effHbocN * gcUptake * costGC;
+  // HBOC costs — incremental above usual care (Guzauskas 2023 approach)
+  // Prior-identified carriers (17%) already have management; exclude from incremental cost
+  const effHbocNForCost  = effHbocN * (1 - hbocPriorId);
+  const hbocScreenCost   = effHbocNForCost * gcUptake * costGC;
   // Surveillance costs recur annually (pvF annuity); surgical costs are one-time (no pvF)
-  const hbocMriCost     = effHbocN * pct('hboc_mri_uptake')   * $('cost_hboc_mri')   * costPvF;
-  const hbocMammoCost   = effHbocN * pct('hboc_mammo_uptake')  * $('cost_hboc_mammo') * costPvF;
-  const hbocMastCost    = effHbocN * pct('hboc_mast_uptake')   * $('cost_hboc_mast')  * surgEligFrac;
-  const hbocRrsoCost    = effHbocN * pct('hboc_rrso_uptake')   * $('cost_hboc_rrso')  * surgEligFrac;
+  // Mammography: charge only the incremental above usual-care biennial screening
+  const incrMammoPerYr   = Math.max(0, $('cost_hboc_mammo') - $('cost_hboc_mammo') / 2);
+  const hbocMriCost      = effHbocNForCost * pct('hboc_mri_uptake')   * $('cost_hboc_mri')   * costPvF;
+  const hbocMammoCost    = effHbocNForCost * pct('hboc_mammo_uptake')  * incrMammoPerYr       * costPvF;
+  const hbocMastCost     = effHbocNForCost * pct('hboc_mast_uptake')   * $('cost_hboc_mast')  * surgEligFrac;
+  const hbocRrsoCost     = effHbocNForCost * pct('hboc_rrso_uptake')   * $('cost_hboc_rrso')  * surgEligFrac;
   const hbocMgmtCost    = hbocMriCost + hbocMammoCost + hbocMastCost + hbocRrsoCost;
   const hbocAvertedBreast  = hbocBreastPrev  * $('cost_breast');
   const hbocAvertedOvarian = hbocOvarianPrev * $('cost_ovarian');
@@ -1644,7 +1667,7 @@ function calculateCore() {
   const totalEvents = lynchTotalEvents + fhMacePrev + hbocBreastPrev + hbocOvarianPrev;
 
   const panelTestCost   = N * costScreen;
-  const gcCost          = effTotalPositives * gcUptake * costGC;
+  const gcCost          = (effLynchNForCost + effFhNForCost + effHbocNForCost) * gcUptake * costGC;
   const baseProgramCost = panelTestCost + gcCost;
   const totalMgmtCost   = lynchMgmtCost + fhMgmtCost + hbocMgmtCost;
   const totalAvertedCost = lynchAvertedCost + fhAvertedCost + hbocAvertedCost;
